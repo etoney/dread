@@ -1,0 +1,29 @@
+name: Build DREAD
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --config Release --target DREAD_VST3 DREAD_Standalone
+      - name: Build AU (macOS)
+        if: runner.os == 'macOS'
+        run: cmake --build build --config Release --target DREAD_AU
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DREAD-${{ runner.os }}
+          path: |
+            build/DREAD_artefacts/Release/VST3
+            build/DREAD_artefacts/Release/AU
+            build/DREAD_artefacts/Release/Standalone

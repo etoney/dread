@@ -1,0 +1,219 @@
+#include "PluginProcessor.h"
+#include "PluginEditor.h"
+
+using APVTS = juce::AudioProcessorValueTreeState;
+
+//==============================================================================
+// Factory presets: { paramID, value } pairs applied over the defaults.
+namespace
+{
+struct Preset { const char* name; std::vector<std::pair<const char*, float>> values; };
+
+const std::vector<Preset>& presets()
+{
+    static const std::vector<Preset> p {
+        { "Init: Unease", {} },
+        { "Basement Hum", { { "dread", 0.25f }, { "droneDetune", 0.15f }, { "droneSub", 0.7f }, { "metalLevel", 0.1f },
+                            { "airLevel", 0.1f }, { "cutoff", 700.0f }, { "reverbMix", 0.25f }, { "torment", 0.3f } } },
+        { "Bowed Morgue", { { "dread", 0.5f }, { "droneLevel", 0.2f }, { "metalLevel", 1.0f }, { "metalResonance", 0.92f },
+                            { "metalTone", 0.7f }, { "airLevel", 0.15f }, { "reverbMix", 0.55f }, { "reverbSize", 0.9f } } },
+        { "Whispers Behind You", { { "dread", 0.6f }, { "droneLevel", 0.15f }, { "metalLevel", 0.1f }, { "airLevel", 0.9f },
+                                   { "airMotion", 0.85f }, { "cutoff", 6000.0f }, { "wobble", 0.4f }, { "delayMix", 0.35f } } },
+        { "Heartbeat Gate", { { "dread", 0.4f }, { "gateDepth", 1.0f }, { "gateRate", 0.0f }, { "attack", 0.01f },
+                              { "torment", 0.55f }, { "droneSub", 0.8f }, { "cutoff", 900.0f }, { "reverbMix", 0.2f } } },
+        { "Asylum Pulse", { { "dread", 0.7f }, { "gateDepth", 0.95f }, { "gateRate", 3.0f }, { "ringMix", 0.45f },
+                            { "ringFreq", 41.0f }, { "metalLevel", 0.6f }, { "delayMix", 0.3f }, { "delayTime", 3.0f } } },
+        { "Total Dread", { { "dread", 1.0f }, { "droneFold", 0.6f }, { "metalLevel", 0.7f }, { "airLevel", 0.5f },
+                           { "torment", 0.45f }, { "reverbMix", 0.6f }, { "reverbSize", 1.0f }, { "release", 8.0f } } },
+        { "Shock Stabs", { { "dread", 0.55f }, { "attack", 0.005f }, { "decay", 0.4f }, { "sustain", 0.0f }, { "release", 1.5f },
+                           { "envAmount", 0.8f }, { "resonance", 0.6f }, { "torment", 0.6f }, { "stingLevel", 1.0f } } },
+    };
+    return p;
+}
+} // namespace
+
+//==============================================================================
+APVTS::ParameterLayout DreadProcessor::createLayout()
+{
+    using namespace juce;
+    std::vector<std::unique_ptr<RangedAudioParameter>> ps;
+    auto add = [&] (const char* id, const char* name, float lo, float hi, float def, float skewCentre = -1.0f, const char* suffix = "")
+    {
+        NormalisableRange<float> r (lo, hi);
+        if (skewCentre > 0) r.setSkewForCentre (skewCentre);
+        ps.push_back (std::make_unique<AudioParameterFloat> (ParameterID { id, 1 }, name, r, def,
+                                                             AudioParameterFloatAttributes().withLabel (suffix)));
+    };
+
+    add ("droneLevel", "Drone Level", 0, 1, 0.8f);
+    add ("droneDetune", "Drone Detune", 0, 1, 0.35f);
+    add ("droneFold", "Drone Fold", 0, 1, 0.2f);
+    add ("droneSub", "Drone Sub", 0, 1, 0.3f);
+    add ("metalLevel", "Metal Level", 0, 1, 0.4f);
+    add ("metalResonance", "Metal Resonance", 0, 1, 0.7f);
+    add ("metalTone", "Metal Tone", 0, 1, 0.5f);
+    add ("airLevel", "Air Level", 0, 1, 0.25f);
+    add ("airMotion", "Air Motion", 0, 1, 0.4f);
+
+    add ("cutoff", "Cutoff", 40, 16000, 2500, 1200, "Hz");
+    add ("resonance", "Resonance", 0, 1, 0.25f);
+    add ("envAmount", "Filter Env", 0, 1, 0.3f);
+    add ("attack", "Attack", 0.001f, 10, 1.2f, 0.8f, "s");
+    add ("decay", "Decay", 0.01f, 10, 1.0f, 1.0f, "s");
+    add ("sustain", "Sustain", 0, 1, 0.8f);
+    add ("release", "Release", 0.01f, 15, 3.0f, 2.0f, "s");
+
+    add ("dread", "DREAD", 0, 1, 0.3f);
+    add ("torment", "TORMENT", 0, 1, 0.15f);
+
+    add ("ringMix", "Ring Mix", 0, 1, 0);
+    add ("ringFreq", "Ring Freq", 5, 2000, 120, 150, "Hz");
+    add ("wobble", "Wobble", 0, 1, 0.15f);
+    add ("gateDepth", "Gate Depth", 0, 1, 0);
+    ps.push_back (std::make_unique<AudioParameterChoice> (ParameterID { "gateRate", 1 }, "Gate Rate",
+                                                         StringArray { "1/8", "1/16", "1/32", "1/16T" }, 1));
+    const bool defSteps[16] = { 1,0,1,1, 0,1,0,1, 1,0,0,1, 0,1,1,0 };
+    for (int i = 0; i < 16; ++i)
+        ps.push_back (std::make_unique<AudioParameterBool> (ParameterID { "gate" + String (i), 1 },
+                                                           "Gate Step " + String (i + 1), defSteps[i]));
+    add ("delayMix", "Delay Mix", 0, 1, 0.15f);
+    add ("delayFeedback", "Delay Feedback", 0, 0.95f, 0.45f);
+    ps.push_back (std::make_unique<AudioParameterChoice> (ParameterID { "delayTime", 1 }, "Delay Time",
+                                                         StringArray { "1/4", "1/8.", "1/8", "1/16" }, 1));
+    add ("reverbMix", "Reverb Mix", 0, 1, 0.35f);
+    add ("reverbSize", "Reverb Size", 0, 1, 0.7f);
+    add ("stingLevel", "Sting Level", 0, 1, 0.8f);
+    ps.push_back (std::make_unique<AudioParameterBool> (ParameterID { "stingZone", 1 }, "Sting Zone (C6+)", true));
+    add ("outputDb", "Output", -36, 6, -6, -1, "dB");
+
+    return { ps.begin(), ps.end() };
+}
+
+//==============================================================================
+DreadProcessor::DreadProcessor()
+    : AudioProcessor (BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
+      apvts (*this, nullptr, "DREAD", createLayout())
+{
+    for (int i = 0; i < 16; ++i) gatePtrs[(size_t) i] = apvts.getRawParameterValue ("gate" + juce::String (i));
+}
+
+bool DreadProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+{
+    const auto& out = layouts.getMainOutputChannelSet();
+    return out == juce::AudioChannelSet::stereo() || out == juce::AudioChannelSet::mono();
+}
+
+void DreadProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+{
+    engine.prepare (sampleRate, samplesPerBlock);
+    keyboardState.reset();
+}
+
+void DreadProcessor::pullParams()
+{
+    auto& p = engine.params;
+    p.droneLevel = get ("droneLevel"); p.droneDetune = get ("droneDetune"); p.droneFold = get ("droneFold"); p.droneSub = get ("droneSub");
+    p.metalLevel = get ("metalLevel"); p.metalResonance = get ("metalResonance"); p.metalTone = get ("metalTone");
+    p.airLevel = get ("airLevel"); p.airMotion = get ("airMotion");
+    p.cutoff = get ("cutoff"); p.resonance = get ("resonance"); p.envAmount = get ("envAmount");
+    p.attack = get ("attack"); p.decay = get ("decay"); p.sustain = get ("sustain"); p.release = get ("release");
+    p.dread = get ("dread"); p.torment = get ("torment");
+    p.ringMix = get ("ringMix"); p.ringFreq = get ("ringFreq"); p.wobble = get ("wobble");
+    p.gateDepth = get ("gateDepth"); p.gateRate = (int) get ("gateRate");
+    for (int i = 0; i < 16; ++i) p.gateSteps[(size_t) i] = gatePtrs[(size_t) i]->load() > 0.5f;
+    p.delayMix = get ("delayMix"); p.delayFeedback = get ("delayFeedback"); p.delayTime = (int) get ("delayTime");
+    p.reverbMix = get ("reverbMix"); p.reverbSize = get ("reverbSize");
+    p.stingLevel = get ("stingLevel"); p.stingZone = get ("stingZone") > 0.5f;
+    p.outputDb = get ("outputDb");
+}
+
+void DreadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
+{
+    juce::ScopedNoDenormals noDenormals;
+    pullParams();
+
+    // Merge on-screen keyboard
+    keyboardState.processNextMidiBuffer (midi, 0, buffer.getNumSamples(), true);
+
+    double bpm = 120.0, ppq = -1.0;
+    if (auto* ph = getPlayHead())
+        if (auto pos = ph->getPosition())
+        {
+            if (auto b = pos->getBpm()) bpm = *b;
+            if (pos->getIsPlaying()) if (auto q = pos->getPpqPosition()) ppq = *q;
+        }
+
+    const int numSamples = buffer.getNumSamples();
+    float* L = buffer.getWritePointer (0);
+    float* R = buffer.getNumChannels() > 1 ? buffer.getWritePointer (1) : nullptr;
+    juce::HeapBlock<float> monoR;
+    if (R == nullptr) { monoR.allocate ((size_t) numSamples, true); R = monoR.get(); }
+
+    const double samplesToBeats = bpm / 60.0 / getSampleRate();
+    int pos = 0;
+    auto renderTo = [&] (int end)
+    {
+        if (end > pos)
+        {
+            const double q = ppq >= 0.0 ? ppq + pos * samplesToBeats : -1.0;
+            engine.process (L + pos, R + pos, end - pos, bpm, q);
+            pos = end;
+        }
+    };
+
+    for (const auto meta : midi)
+    {
+        renderTo (std::min (meta.samplePosition, numSamples));
+        const auto m = meta.getMessage();
+        if (m.isNoteOn())                         engine.noteOn (m.getNoteNumber(), m.getFloatVelocity());
+        else if (m.isNoteOff())                   engine.noteOff (m.getNoteNumber());
+        else if (m.isAllNotesOff() || m.isAllSoundOff()) engine.allNotesOff();
+    }
+    renderTo (numSamples);
+
+    if (buffer.getNumChannels() == 1)
+        for (int i = 0; i < numSamples; ++i) L[i] = 0.5f * (L[i] + R[i]);
+    for (int ch = 2; ch < buffer.getNumChannels(); ++ch) buffer.clear (ch, 0, numSamples);
+}
+
+//==============================================================================
+int DreadProcessor::getNumPrograms() { return (int) presets().size(); }
+const juce::String DreadProcessor::getProgramName (int index)
+{
+    return juce::isPositiveAndBelow (index, getNumPrograms()) ? presets()[(size_t) index].name : "";
+}
+
+void DreadProcessor::setCurrentProgram (int index)
+{
+    if (! juce::isPositiveAndBelow (index, getNumPrograms())) return;
+    currentProgram = index;
+    for (auto* p : getParameters())
+        if (auto* rp = dynamic_cast<juce::RangedAudioParameter*> (p))
+            if (! rp->getParameterID().startsWith ("gate") || rp->getParameterID() == "gateDepth" || rp->getParameterID() == "gateRate")
+                rp->setValueNotifyingHost (rp->getDefaultValue());
+    for (auto& [id, v] : presets()[(size_t) index].values)
+        if (auto* rp = apvts.getParameter (id))
+            rp->setValueNotifyingHost (rp->convertTo0to1 (v));
+}
+
+void DreadProcessor::getStateInformation (juce::MemoryBlock& destData)
+{
+    auto state = apvts.copyState();
+    state.setProperty ("program", currentProgram, nullptr);
+    if (auto xml = state.createXml()) copyXmlToBinary (*xml, destData);
+}
+
+void DreadProcessor::setStateInformation (const void* data, int sizeInBytes)
+{
+    if (auto xml = getXmlFromBinary (data, sizeInBytes))
+        if (xml->hasTagName (apvts.state.getType()))
+        {
+            auto vt = juce::ValueTree::fromXml (*xml);
+            currentProgram = vt.getProperty ("program", 0);
+            apvts.replaceState (vt);
+        }
+}
+
+juce::AudioProcessorEditor* DreadProcessor::createEditor() { return new DreadEditor (*this); }
+
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return new DreadProcessor(); }
