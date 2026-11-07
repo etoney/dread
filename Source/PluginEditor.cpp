@@ -92,6 +92,9 @@ DreadEditor::DreadEditor (DreadProcessor& p)
                  makeKnob ("delayMix", "Delay"), makeKnob ("delayFeedback", "Feedback"), makeKnob ("reverbMix", "Reverb"), makeKnob ("reverbSize", "Size") });
     sec ("GATE",   { makeKnob ("gateDepth", "Depth") });
     sec ("STING",  { makeKnob ("stingLevel", "Level"), makeKnob ("outputDb", "Output") });
+    sec ("BROKEN PIANO",   { makeKnob ("pianoLevel", "Level"), makeKnob ("pianoBreak", "Break") });
+    sec ("DEMON WHISPERS", { makeKnob ("whisperLevel", "Level"), makeKnob ("whisperDemon", "Demon") });
+    sec ("SCREAMS",        { makeKnob ("screamLevel", "Level"), makeKnob ("screamRasp", "Rasp") });
 
     for (int i = 0; i < proc.getNumPrograms(); ++i) presetBox.addItem (proc.getProgramName (i), i + 1);
     presetBox.setSelectedId (proc.getCurrentProgram() + 1, juce::dontSendNotification);
@@ -118,7 +121,7 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     keyboard.setColour (juce::MidiKeyboardComponent::mouseOverKeyOverlayColourId, colours::blood.withAlpha (0.3f));
     addAndMakeVisible (keyboard);
 
-    setSize (1040, 640);
+    setSize (1040, 800);
     startTimerHz (20);
 }
 
@@ -163,8 +166,9 @@ void DreadEditor::resized()
     keyboard.setBounds (r.removeFromBottom (70));
     r.removeFromBottom (8);
 
-    const int rowH = (r.getHeight() - 16) / 3;
+    const int rowH = (r.getHeight() - 24) / 4;
     auto row1 = r.removeFromTop (rowH); r.removeFromTop (8);
+    auto rowSrc = r.removeFromTop (rowH); r.removeFromTop (8);
     auto row2 = r.removeFromTop (rowH); r.removeFromTop (8);
     auto row3 = r;
     const int gap = 8;
@@ -183,6 +187,8 @@ void DreadEditor::resized()
 
     auto a = splitRow (row1, { 4, 3, 2, 3 });
     for (int i = 0; i < 4; ++i) layoutSection (sections[(size_t) i], a[(size_t) i]);
+    auto src = splitRow (rowSrc, { 1, 1, 1 });
+    for (int i = 0; i < 3; ++i) layoutSection (sections[(size_t) (8 + i)], src[(size_t) i]);
     auto b = splitRow (row2, { 1, 1 });
     layoutSection (sections[4], b[0]); layoutSection (sections[5], b[1]);
     auto c = splitRow (row3, { 7, 2 });

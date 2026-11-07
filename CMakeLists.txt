@@ -50,4 +50,6 @@ target_link_libraries(DREAD
 
 # Offline DSP test (no JUCE): renders test/demo.wav
 add_executable(dread_render test/render_demo.cpp)
+add_executable(dread_render_new test/render_new_sounds.cpp)
+target_include_directories(dread_render_new PRIVATE Source)
 target_include_directories(dread_render PRIVATE Source)

@@ -8,6 +8,9 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 | **Drone** | 5 detuned band-limited saws with independent random pitch drift, a wavefolder (Fold) and a sub sine |
 | **Metal** | Noise-bowed comb resonator pair at an inharmonic ratio (2.756×): bowed cymbals, scraped rails |
 | **Air** | Noise through two drifting formant filters: breathy, whisper-like movement |
+| **Broken Piano** | Modal piano with stretched partials on detuned string pairs. *Break* knocks keys out of tune (the same key is always wrong the same way), kills some keys and partials, and adds string rattle |
+| **Demon Whispers** | Two whisperers speaking random syllables with sibilants. *Demon* lowers the vocal tract and adds a period-doubled growl. Syllable speed follows Air *Motion* |
+| **Screams** | Voice-like source that swoops up into each note, with growing wild vibrato, jitter, breath and open-vowel formants. *Rasp* adds roughness, subharmonics and drive |
 | **Sting zone** | Notes **C6 and up** fire one-shot jumpscares (noise slam + dive-bomb sweep + inharmonic bell partials). Toggle with *Sting zone* |
 
 **Macros**
@@ -16,7 +19,7 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 
 **FX chain:** Ring mod → Torment → 16-step tempo-synced Gate → Wobble (tape warble) → Ping-pong delay → 8-line FDN reverb (up to ~13 s tails) → Output.
 
-8 factory presets: Unease, Basement Hum, Bowed Morgue, Whispers Behind You, Heartbeat Gate, Asylum Pulse, Total Dread, Shock Stabs.
+12 factory presets: Unease, Basement Hum, Bowed Morgue, Whispers Behind You, Heartbeat Gate, Asylum Pulse, Total Dread, Shock Stabs, Broken Piano, Demonic Whispers, Screams, Haunted Parlor.
 
 ## Building
 Requirements: CMake 3.22+, Git, and a C++17 compiler (Xcode on macOS, Visual Studio 2022 on Windows). JUCE is downloaded automatically.

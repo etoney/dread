@@ -162,6 +162,221 @@ struct Params
     float reverbMix = 0.35f, reverbSize = 0.7f;
     float stingLevel = 0.8f; bool stingZone = true;
     float outputDb = -6.0f;
+    // Extra sources
+    float pianoLevel = 0.0f, pianoBreak = 0.5f;
+    float whisperLevel = 0.0f, whisperDemon = 0.4f;
+    float screamLevel = 0.0f, screamRasp = 0.4f;
+};
+
+//==============================================================================
+// BROKEN PIANO — additive/modal piano: stretched (inharmonic) partials on detuned string pairs,
+// hammer thump, per-key fixed detune (same key is always wrong the same way), dead keys, string rattle.
+class PianoLayer
+{
+public:
+    void prepare (float sampleRate) { sr = sampleRate; }
+
+    void start (int note, float freq, float vel, float brk)
+    {
+        Rng key ((uint32_t) (note * 2654435761u) ^ 0xA5A5A5u);  // per-key, deterministic
+        const float keyDetune = key.bi() * brk * 45.0f;
+        dead = key.uni() < brk * 0.22f;
+        rattle = brk * (0.15f + 0.35f * key.uni());
+        const float f0 = freq * centsToRatio (keyDetune);
+        const float B = 0.0003f * (1.0f + brk * 10.0f);
+        const float pairCents = 0.6f + brk * 14.0f;
+        const float baseT = 4.0f * std::pow (261.6f / f0, 0.45f) * (dead ? 0.12f : 1.0f);
+        Rng r ((uint32_t) note * 7919u + (uint32_t) (vel * 1000.0f));
+
+        num = 0;
+        for (int n = 1; n <= 12; ++n)
+        {
+            const float fn = f0 * (float) n * std::sqrt (1.0f + B * (float) (n * n));
+            if (fn > sr * 0.42f) break;
+            float amp = std::pow ((float) n, -0.9f) * (0.4f + 0.6f * std::pow (vel, (float) n * 0.15f));
+            if (r.uni() < brk * 0.3f) amp *= 0.08f;                    // missing partials
+            const float T = baseT / (1.0f + 0.45f * (float) (n - 1));
+            for (int s = 0; s < 2; ++s)
+            {
+                const float f  = fn * centsToRatio ((s == 0 ? -0.5f : 0.5f) * pairCents + r.bi() * brk * 3.0f);
+                const float w  = kTwoPi * f / sr;
+                const float rr = std::exp (-6.9f / (T * sr));
+                auto& p = parts[(size_t) num++];
+                p.c = 2.0f * rr * std::cos (w); p.r2 = rr * rr;
+                p.s2 = 0; p.s1 = amp * std::sin (w);
+                p.pan = s == 0 ? 0.35f : 0.65f;
+            }
+        }
+        hammerT = 0; hammerAmp = 0.5f * vel * (dead ? 2.0f : 1.0f);
+        hammer.set (std::min (f0 * 3.0f, 4500.0f), 1.5f, sr);
+    }
+
+    void tick (Rng& rng, float& l, float& rt)
+    {
+        float sl = 0, sr_ = 0;
+        for (int i = 0; i < num; ++i)
+        {
+            auto& p = parts[(size_t) i];
+            const float y = p.c * p.s1 - p.r2 * p.s2;
+            p.s2 = p.s1; p.s1 = y;
+            sl += y * (1.0f - p.pan); sr_ += y * p.pan;
+        }
+        // rattle: noise amplitude-modulated by the string signal
+        const float nz = rng.bi();
+        sl += sl * nz * rattle; sr_ += sr_ * nz * rattle;
+        // hammer thump
+        if (hammerT < 0.05f * sr)
+        {
+            const float h = hammer.bp (rng.bi()) * hammerAmp * std::exp (-hammerT / (0.006f * sr));
+            sl += h; sr_ += h; hammerT += 1.0f;
+        }
+        l = sl * 1.3f; rt = sr_ * 1.3f;
+    }
+
+private:
+    struct Partial { float c = 0, r2 = 0, s1 = 0, s2 = 0, pan = 0.5f; };
+    float sr = 48000, rattle = 0, hammerT = 1e9f, hammerAmp = 0;
+    bool dead = false; int num = 0;
+    std::array<Partial, 24> parts {};
+    SVF hammer;
+};
+
+//==============================================================================
+// Formant tables {F1, F2, F3}
+static constexpr float kVowels[7][3] = {
+    { 730, 1090, 2440 }, { 530, 1840, 2480 }, { 270, 2290, 3010 }, { 570, 840, 2410 },
+    { 300, 870, 2240 },  { 660, 1700, 2400 }, { 490, 1350, 1690 } };
+
+// DEMON WHISPERS — two whisperers speaking random syllables (noise through gliding formants,
+// sibilant consonants), plus an optional period-doubled growl through a lowered vocal tract.
+class WhisperLayer
+{
+public:
+    void prepare (float sampleRate, uint32_t seed) { sr = sampleRate; rng = Rng (seed); }
+
+    void start (float freq)
+    {
+        growlFreq = std::max (35.0f, freq * 0.5f);
+        sizeScale = std::pow (freq / 130.0f, 0.12f);
+        for (auto& w : wh) { w.t = 0; w.dur = 0.05f + rng.uni() * 0.2f; w.amp = 0; }
+    }
+
+    void control (float motion, float demon)
+    {
+        const float scale = sizeScale * (1.0f - demon * 0.42f);
+        const float glide = 0.25f + motion * 0.5f;
+        for (auto& w : wh)
+            for (int k = 0; k < 3; ++k)
+            {
+                w.cur[k] += (w.tgt[k] - w.cur[k]) * glide;
+                w.f[k].set (w.cur[k] * scale, 9.0f + (float) k * 3.0f, sr);
+            }
+        growlRough.setCutoff (60.0f, sr);
+        sib.set (5500.0f, 0.8f, sr);
+    }
+
+    void tick (float motion, float demon, float& l, float& r)
+    {
+        // growl source (shared): saw with jitter + period doubling
+        jit = jit * 0.999f + rng.bi() * 0.001f;
+        const float gf = growlFreq * (1.0f + jit * 8.0f + growlRough.lp (rng.bi()) * 0.6f);
+        const float before = growl.phase;
+        float g = growl.tick (gf / sr);
+        if (growl.phase < before) odd = ! odd;
+        g *= odd ? 1.0f : 0.45f;
+
+        l = r = 0;
+        for (auto& w : wh)
+        {
+            w.t += 1.0f / sr;
+            if (w.t >= w.dur) newSyllable (w, motion);
+            const float x = w.t / w.dur;
+            const float env = w.amp * std::pow (std::max (0.0f, std::sin (kPi * x)), 0.8f);
+            const float src = rng.bi() * (1.0f - demon * 0.4f) + g * demon * 1.6f * (0.35f + 0.65f * env / std::max (0.05f, w.amp));
+            float y = w.f[0].bp (src) * 1.0f + w.f[1].bp (src) * 0.7f + w.f[2].bp (src) * 0.45f;
+            y *= env;
+            w.cons *= 0.9985f;
+            y += sib.hp (rng.bi()) * w.cons * 0.8f;
+            l += y * (1.0f - w.pan); r += y * w.pan;
+        }
+        l *= 0.95f; r *= 0.95f;
+    }
+
+private:
+    struct Whisperer { SVF f[3]; float cur[3] { 500, 1500, 2500 }, tgt[3] { 500, 1500, 2500 };
+                       float t = 0, dur = 0.1f, amp = 0, pan = 0.5f, cons = 0; };
+    void newSyllable (Whisperer& w, float motion)
+    {
+        w.t = 0;
+        w.dur = (0.07f + rng.uni() * 0.3f) * (1.4f - motion * 0.8f);
+        const bool gap = rng.uni() < 0.22f;
+        w.amp = gap ? 0.0f : 0.35f + rng.uni() * 0.65f;
+        const int v = (int) (rng.uni() * 7.0f) % 7;
+        for (int k = 0; k < 3; ++k) w.tgt[k] = kVowels[v][k] * (0.9f + rng.uni() * 0.2f);
+        w.pan = 0.1f + rng.uni() * 0.8f;
+        if (! gap && rng.uni() < 0.45f) w.cons = 0.6f + rng.uni() * 0.4f;
+    }
+    float sr = 48000, growlFreq = 55, sizeScale = 1, jit = 0; bool odd = false;
+    Rng rng; Saw growl; OnePole growlRough; SVF sib;
+    std::array<Whisperer, 2> wh;
+};
+
+// SCREAMS — glottal saw with a rising pitch contour, growing wild vibrato and jitter,
+// pitch-tracking open-vowel formants, breath, rasp (rough AM + subharmonics) and drive.
+class ScreamLayer
+{
+public:
+    void prepare (float sampleRate, uint32_t seed) { sr = sampleRate; rng = Rng (seed); }
+
+    void start (float freq)
+    {
+        base = freq; t = 0; vibPhase = rng.uni();
+        vibRate = 5.5f + rng.uni() * 3.0f;
+        pan = 0.2f + rng.uni() * 0.6f;
+        vowelMix = rng.uni();
+        jitter.setRate (14.0f, sr);
+        rough.setCutoff (180.0f, sr);
+        for (auto& f : form) f.reset();
+    }
+
+    void control (float rasp)
+    {
+        const float f = curFreq;
+        const float a = vowelMix + 0.15f * std::sin (t * 1.7f);
+        const float f1 = std::max (750.0f, f * 1.08f);
+        const float f2 = 1250.0f + a * 700.0f;
+        const float f3 = 2850.0f + a * 300.0f;
+        form[0].set (f1, 4.0f, sr); form[1].set (f2, 7.0f, sr); form[2].set (f3, 9.0f, sr);
+        breathHp.set (1800.0f, 0.7f, sr);
+        drive = 1.0f + rasp * 5.0f;
+    }
+
+    void tick (float rasp, float& l, float& r)
+    {
+        const float tt = t; t += 1.0f / sr;
+        const float slide = -7.0f * std::exp (-tt * 9.0f);                       // swoop up into the scream
+        const float vibDepth = 0.15f + 0.6f * std::min (1.0f, tt / 0.8f);
+        vibPhase += vibRate / sr; if (vibPhase >= 1.0f) vibPhase -= 1.0f;
+        const float semis = slide + std::sin (kTwoPi * vibPhase) * vibDepth + jitter.tick (rng) * (0.25f + rasp * 0.7f);
+        curFreq = base * std::pow (2.0f, semis / 12.0f);
+
+        const float before = glottis.phase;
+        float src = glottis.tick (std::min (curFreq, sr * 0.3f) / sr);
+        if (glottis.phase < before) odd = ! odd;
+        if (odd) src *= 1.0f - rasp * 0.55f;                                       // subharmonic
+        src *= 1.0f + rough.lp (rng.bi()) * rasp * 9.0f;                           // roughness
+        src += breathHp.hp (rng.bi()) * 0.35f;
+
+        float y = form[0].bp (src) * 1.0f + form[1].bp (src) * 0.8f + form[2].bp (src) * 0.5f;
+        y = std::tanh (y * 0.25f * drive) / std::sqrt (drive);
+        l = y * (1.0f - pan) * 2.6f; r = y * pan * 2.6f;
+    }
+
+private:
+    float sr = 48000, base = 440, t = 0, vibPhase = 0, vibRate = 6, pan = 0.5f, vowelMix = 0.5f, curFreq = 440, drive = 1;
+    bool odd = false;
+    Rng rng; Saw glottis; Drift jitter; OnePole rough; SVF breathHp;
+    std::array<SVF, 3> form;
 };
 
 //==============================================================================
@@ -177,6 +392,7 @@ public:
         sr = sampleRate; rng = Rng (seed);
         combA.init ((int) (sr / 15.0f) + 8); combB.init ((int) (sr / 15.0f) + 8);
         for (auto& o : osc) o.phase = rng.uni();
+        piano.prepare (sr); whisper.prepare (sr, seed ^ 0x51ED27u); scream.prepare (sr, seed ^ 0xBADC0DEu);
     }
 
     void start (int n, float velocity, const Params& p)
@@ -186,6 +402,9 @@ public:
         amp.set (p.attack, p.decay, p.sustain, p.release, sr);
         fenv.set (std::max (0.005f, p.attack * 0.6f), p.decay * 1.5f + 0.2f, 0.0f, p.release, sr);
         amp.on(); fenv.on();
+        piano.start (n, baseFreq, velocity, p.pianoBreak);
+        whisper.start (baseFreq);
+        scream.start (baseFreq);
     }
     void stop() { amp.off(); fenv.off(); }
     void kill() { amp.st = ADSR::Idle; amp.v = 0; }
@@ -219,6 +438,8 @@ public:
             const float f1 = 350.0f + (formDrift[0].from * 0.5f + 0.5f) * 500.0f;
             const float f2 = 1000.0f + (formDrift[1].from * 0.5f + 0.5f) * 1500.0f;
             formA.set (f1, 7.0f, sr); formB.set (f2, 9.0f, sr);
+            if (p.whisperLevel > 0.0001f) whisper.control (p.airMotion, p.whisperDemon);
+            if (p.screamLevel > 0.0001f)  scream.control (p.screamRasp);
 
             for (int j = 0; j < m; ++j)
             {
@@ -249,7 +470,7 @@ public:
                 ya = combDampA.lp (ya); yb = combDampB.lp (yb);
                 combA.push (std::tanh (exc + ya * combFb));
                 combB.push (std::tanh (exc + yb * combFb * 0.985f));
-                const float ml = ya * 1.6f + yb * 0.7f, mr = ya * 0.9f + yb * 1.4f;
+                const float ml = (ya * 1.6f + yb * 0.7f) * 3.0f, mr = (ya * 0.9f + yb * 1.4f) * 3.0f;
 
                 // --- Air (whisper formants)
                 formDrift[0].tick (rng); formDrift[1].tick (rng);
@@ -259,6 +480,11 @@ public:
                 const float airL = (p.airLevel + airAmt);
                 float xl = dl * p.droneLevel + ml * p.metalLevel + air * airL;
                 float xr = dr * p.droneLevel + mr * p.metalLevel + air * airL;
+
+                float el, er;
+                if (p.pianoLevel > 0.0001f)   { piano.tick (rng, el, er);                                 xl += el * p.pianoLevel;   xr += er * p.pianoLevel; }
+                if (p.whisperLevel > 0.0001f) { whisper.tick (p.airMotion, p.whisperDemon, el, er);       xl += el * p.whisperLevel; xr += er * p.whisperLevel; }
+                if (p.screamLevel > 0.0001f)  { scream.tick (p.screamRasp, el, er);                       xl += el * p.screamLevel;  xr += er * p.screamLevel; }
 
                 xl = filtL.lp (xl); xr = filtR.lp (xr);
                 const float g = a * (0.35f + 0.65f * vel) * 0.5f;
@@ -274,6 +500,7 @@ private:
     DelayLine combA, combB; OnePole combDampA, combDampB;
     SVF filtL, filtR, formA, formB;
     ADSR amp, fenv;
+    PianoLayer piano; WhisperLayer whisper; ScreamLayer scream;
 };
 
 //==============================================================================

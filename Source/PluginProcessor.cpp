@@ -27,6 +27,22 @@ const std::vector<Preset>& presets()
                            { "torment", 0.45f }, { "reverbMix", 0.6f }, { "reverbSize", 1.0f }, { "release", 8.0f } } },
         { "Shock Stabs", { { "dread", 0.55f }, { "attack", 0.005f }, { "decay", 0.4f }, { "sustain", 0.0f }, { "release", 1.5f },
                            { "envAmount", 0.8f }, { "resonance", 0.6f }, { "torment", 0.6f }, { "stingLevel", 1.0f } } },
+        { "Broken Piano", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "pianoLevel", 1.0f },
+                            { "pianoBreak", 0.65f }, { "dread", 0.25f }, { "attack", 0.002f }, { "sustain", 1.0f },
+                            { "release", 1.2f }, { "cutoff", 9000.0f }, { "envAmount", 0.0f }, { "wobble", 0.3f },
+                            { "reverbMix", 0.4f }, { "reverbSize", 0.6f }, { "delayMix", 0.12f } } },
+        { "Demonic Whispers", { { "droneLevel", 0.0f }, { "metalLevel", 0.15f }, { "airLevel", 0.0f }, { "whisperLevel", 1.0f },
+                                { "whisperDemon", 0.75f }, { "airMotion", 0.6f }, { "dread", 0.5f }, { "attack", 0.3f },
+                                { "sustain", 1.0f }, { "release", 2.5f }, { "cutoff", 12000.0f }, { "envAmount", 0.0f },
+                                { "reverbMix", 0.45f }, { "delayMix", 0.25f }, { "wobble", 0.2f } } },
+        { "Screams", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "screamLevel", 1.0f },
+                       { "screamRasp", 0.5f }, { "dread", 0.2f }, { "torment", 0.2f }, { "attack", 0.04f }, { "sustain", 1.0f },
+                       { "release", 0.6f }, { "cutoff", 14000.0f }, { "envAmount", 0.0f }, { "reverbMix", 0.5f },
+                       { "reverbSize", 0.8f }, { "delayMix", 0.1f } } },
+        { "Haunted Parlor", { { "droneLevel", 0.15f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "pianoLevel", 0.9f },
+                              { "pianoBreak", 0.5f }, { "whisperLevel", 0.5f }, { "whisperDemon", 0.5f }, { "dread", 0.4f },
+                              { "attack", 0.002f }, { "sustain", 1.0f }, { "release", 2.0f }, { "cutoff", 8000.0f },
+                              { "envAmount", 0.0f }, { "wobble", 0.35f }, { "reverbMix", 0.5f } } },
     };
     return p;
 }
@@ -54,6 +70,13 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
     add ("metalTone", "Metal Tone", 0, 1, 0.5f);
     add ("airLevel", "Air Level", 0, 1, 0.25f);
     add ("airMotion", "Air Motion", 0, 1, 0.4f);
+
+    add ("pianoLevel", "Piano Level", 0, 1, 0);
+    add ("pianoBreak", "Piano Break", 0, 1, 0.5f);
+    add ("whisperLevel", "Whisper Level", 0, 1, 0);
+    add ("whisperDemon", "Whisper Demon", 0, 1, 0.4f);
+    add ("screamLevel", "Scream Level", 0, 1, 0);
+    add ("screamRasp", "Scream Rasp", 0, 1, 0.4f);
 
     add ("cutoff", "Cutoff", 40, 16000, 2500, 1200, "Hz");
     add ("resonance", "Resonance", 0, 1, 0.25f);
@@ -115,6 +138,9 @@ void DreadProcessor::pullParams()
     p.droneLevel = get ("droneLevel"); p.droneDetune = get ("droneDetune"); p.droneFold = get ("droneFold"); p.droneSub = get ("droneSub");
     p.metalLevel = get ("metalLevel"); p.metalResonance = get ("metalResonance"); p.metalTone = get ("metalTone");
     p.airLevel = get ("airLevel"); p.airMotion = get ("airMotion");
+    p.pianoLevel = get ("pianoLevel"); p.pianoBreak = get ("pianoBreak");
+    p.whisperLevel = get ("whisperLevel"); p.whisperDemon = get ("whisperDemon");
+    p.screamLevel = get ("screamLevel"); p.screamRasp = get ("screamRasp");
     p.cutoff = get ("cutoff"); p.resonance = get ("resonance"); p.envAmount = get ("envAmount");
     p.attack = get ("attack"); p.decay = get ("decay"); p.sustain = get ("sustain"); p.release = get ("release");
     p.dread = get ("dread"); p.torment = get ("torment");
