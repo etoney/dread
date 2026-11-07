@@ -244,7 +244,7 @@ void DreadEditor::paint (juce::Graphics& g)
     g.setFont (juce::Font (34.0f, juce::Font::bold));
     g.drawText ("D R E A D", 16, 10, 300, 40, juce::Justification::centredLeft);
     g.setColour (ash); g.setFont (12.0f);
-    g.drawText ("horror texture designer", 210, 22, 200, 20, juce::Justification::centredLeft);
+    g.drawText ("horror texture designer  v" JucePlugin_VersionString, 210, 22, 260, 20, juce::Justification::centredLeft);
 
     for (auto& s : sections)
     {
@@ -265,5 +265,5 @@ void DreadEditor::timerCallback()
     flicker = (rnd.nextFloat() < 0.05f + d * 0.25f) ? rnd.nextFloat() : flicker * 0.5f;
     if (presetBox.getSelectedId() != proc.getCurrentProgram() + 1)
         presetBox.setSelectedId (proc.getCurrentProgram() + 1, juce::dontSendNotification);
-    repaint (0, 0, 420, 60);
+    repaint (0, 0, 480, 60);
 }
