@@ -285,7 +285,7 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     keyboard.setColour (juce::MidiKeyboardComponent::upDownButtonArrowColourId, pal::paint);
     addAndMakeVisible (keyboard);
 
-    setSize (1040, 820);
+    setSize (1040, 860);
     startTimerHz (20);
 }
 
@@ -327,21 +327,23 @@ void DreadEditor::layoutSection (Section& s, juce::Rectangle<int> area)
 void DreadEditor::resized()
 {
     auto r = getLocalBounds().reduced (14);
-    auto header = r.removeFromTop (64);
+    auto header = r.removeFromTop (60);
     logoArea  = header.withWidth (300);
     presetBox.setBounds (header.removeFromRight (240).withSizeKeepingCentre (240, 28));
     badgeArea = juce::Rectangle<int> (0, 0, 440, 52).withCentre ({ getWidth() / 2 + 20, header.getCentreY() });
 
-    keyboard.setBounds (r.removeFromBottom (70));
+    keyboard.setBounds (r.removeFromBottom (60));
     keyboard.setKeyWidth ((float) keyboard.getWidth() / 50.0f);
     r.removeFromBottom (10);
 
-    const int gap = 10;
+    const int gap = 9;
+    const int gateH = 96;
+    auto rowGate = r.removeFromBottom (gateH); r.removeFromBottom (gap);
     const int rowH = (r.getHeight() - gap * 3) / 4;
-    auto row1 = r.removeFromTop (rowH); r.removeFromTop (gap);
-    auto rowSrc = r.removeFromTop (rowH); r.removeFromTop (gap);
-    auto row2 = r.removeFromTop (rowH); r.removeFromTop (gap);
-    auto row3 = r;
+    auto rowSrcA = r.removeFromTop (rowH); r.removeFromTop (gap);
+    auto rowSrcB = r.removeFromTop (rowH); r.removeFromTop (gap);
+    auto rowShape = r.removeFromTop (rowH); r.removeFromTop (gap);
+    auto rowFx = r;
 
     auto splitRow = [gap] (juce::Rectangle<int> row, std::vector<float> weights)
     {
@@ -354,34 +356,26 @@ void DreadEditor::resized()
         }
         return out;
     };
+    // section indices: 0 drone, 1 metal, 2 air, 3 macros, 4 filter, 5 fx, 6 gate, 7 sting,
+    //                  8 piano, 9 whispers, 10 screams, 11 distortion, 12 chains
 
-    auto a = splitRow (row1, { 4, 3, 2, 3 });
-    for (int i = 0; i < 4; ++i) layoutSection (sections[(size_t) i], a[(size_t) i]);
-    auto src = splitRow (rowSrc, { 2, 2, 2, 3, 3 });
-    for (int i = 0; i < 5; ++i) layoutSection (sections[(size_t) (8 + i)], src[(size_t) i]);
-    auto b = splitRow (row2, { 1, 1 });
-    layoutSection (sections[4], b[0]); layoutSection (sections[5], b[1]);
-    auto c = splitRow (row3, { 6.4f, 2.6f });
+    // SOUND SOURCES
+    auto a = splitRow (rowSrcA, { 4, 3, 2 });
+    layoutSection (sections[0], a[0]); layoutSection (sections[1], a[1]); layoutSection (sections[8], a[2]);
+    auto b = splitRow (rowSrcB, { 2, 2, 2, 3 });
+    layoutSection (sections[2], b[0]); layoutSection (sections[9], b[1]); layoutSection (sections[10], b[2]); layoutSection (sections[12], b[3]);
 
-    // Gate: depth knob + rate + 16 steps
-    auto gate = c[0];
-    sections[6].bounds = gate;
-    auto gInner = gate.reduced (10).withTrimmedTop (18);
-    auto depthCell = gInner.removeFromLeft (80);
-    sections[6].knobs[0]->label.setBounds (depthCell.removeFromTop (15));
-    sections[6].knobs[0]->slider.setBounds (depthCell);
-    gateRateBox.setBounds (gInner.removeFromLeft (90).withSizeKeepingCentre (80, 24));
-    gInner.removeFromLeft (8);
-    gateArea = gInner.withSizeKeepingCentre (gInner.getWidth(), std::min (56, gInner.getHeight()));
-    const int sw = gateArea.getWidth() / 16;
-    for (int i = 0; i < 16; ++i)
-        steps[(size_t) i].setBounds (gateArea.getX() + i * sw + ((i % 4 == 0) ? 3 : 0), gateArea.getY(), sw - 2, gateArea.getHeight());
+    // SHAPING: filter/amp, distortion, macros
+    auto c = splitRow (rowShape, { 7, 3.4f, 2.8f });
+    layoutSection (sections[4], c[0]); layoutSection (sections[11], c[1]); layoutSection (sections[3], c[2]);
 
-    // Sting / output
-    auto st = c[1];
+    // EFFECTS + sting/output
+    auto d = splitRow (rowFx, { 7, 2.6f });
+    layoutSection (sections[5], d[0]);
+    auto st = d[1];
     sections[7].bounds = st;
     auto sInner = st.reduced (10).withTrimmedTop (18);
-    stingZone.setBounds (sInner.removeFromBottom (22));
+    stingZone.setBounds (sInner.removeFromBottom (20));
     const int kw = sInner.getWidth() / 2;
     for (auto* k : sections[7].knobs)
     {
@@ -390,12 +384,25 @@ void DreadEditor::resized()
         k->slider.setBounds (cell);
     }
 
+    // GATE: full width
+    sections[6].bounds = rowGate;
+    auto gInner = rowGate.reduced (10).withTrimmedTop (18);
+    auto depthCell = gInner.removeFromLeft (80);
+    sections[6].knobs[0]->label.setBounds (depthCell.removeFromTop (14));
+    sections[6].knobs[0]->slider.setBounds (depthCell);
+    gateRateBox.setBounds (gInner.removeFromLeft (96).withSizeKeepingCentre (80, 24));
+    gInner.removeFromLeft (8);
+    gateArea = gInner.withSizeKeepingCentre (gInner.getWidth(), std::min (52, gInner.getHeight()));
+    const int sw = gateArea.getWidth() / 16;
+    for (int i = 0; i < 16; ++i)
+        steps[(size_t) i].setBounds (gateArea.getX() + i * sw + ((i % 4 == 0) ? 4 : 0), gateArea.getY(), sw - 3, gateArea.getHeight());
+
+    // header-row menus
     auto fx = sections[5].bounds;
     delayTimeBox.setBounds (fx.getRight() - 86, fx.getY() + 6, 74, 20);
     auto ds = sections[11].bounds;
-    distTypeBox.setBounds (ds.getRight() - 112, ds.getY() + 6, 100, 20);
-    auto sts = sections[7].bounds;
-    stingTypeBox.setBounds (sts.getRight() - 122, sts.getY() + 6, 110, 20);
+    distTypeBox.setBounds (ds.getRight() - 120, ds.getY() + 6, 108, 20);
+    stingTypeBox.setBounds (st.getRight() - 122, st.getY() + 6, 110, 20);
 
     buildBackdrop();
 }
