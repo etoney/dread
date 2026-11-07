@@ -32,8 +32,8 @@ jobs:
         run: |
           cmake --build build --config Release --target DreadSnapshot
           "$(find build -type f -name DreadSnapshot -perm -u+x | head -1)" "$PWD/gui.png"
-          mkdir -p /tmp/shot && cp gui.png /tmp/shot/
-          cd /tmp/shot && git init -q -b screenshots && git add gui.png
+          mkdir -p /tmp/shot && cp gui.png gui_save.png /tmp/shot/ 2>/dev/null || cp gui.png /tmp/shot/
+          cd /tmp/shot && git init -q -b screenshots && git add -A
           git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "GUI snapshot for ${GITHUB_SHA}"
           git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" screenshots
       - uses: actions/upload-artifact@v4
