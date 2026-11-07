@@ -142,12 +142,6 @@ juce::Font DreadLookAndFeel::getTextButtonFont (juce::TextButton&, int h) { retu
 void DreadLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& b, const juce::Colour&, bool hi, bool down)
 {
     auto r = b.getLocalBounds().toFloat().reduced (0.5f);
-    if (! b.isEnabled())
-    {
-        g.setColour (juce::Colour (0xff15100d)); g.fillRoundedRectangle (r, 3.0f);
-        g.setColour (juce::Colour (0xff3a2a20)); g.drawRoundedRectangle (r, 3.0f, 1.0f);
-        return;
-    }
     g.setColour (juce::Colours::black.withAlpha (0.55f)); g.fillRoundedRectangle (r.translated (1.0f, 1.5f), 3.0f);
     g.setGradientFill (juce::ColourGradient (down ? pal::rustDeep : juce::Colour (0xff3a2a20), 0, r.getY(),
                                              down ? juce::Colour (0xff2a120a) : juce::Colour (0xff17110e), 0, r.getBottom(), false));
@@ -303,10 +297,6 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     saveButton.setTooltip ("Save the current settings as a new preset");
     saveButton.onClick = [this] { showSaveDialog(); };
     addAndMakeVisible (saveButton);
-    deleteButton.setTooltip ("Delete the selected user preset (factory presets can't be deleted)");
-    deleteButton.onClick = [this] { confirmDeleteCurrent(); };
-    addAndMakeVisible (deleteButton);
-    updateDeleteState();
 
     gateRateBox.addItemList ({ "1/8", "1/16", "1/32", "1/16T" }, 1);
     delayTimeBox.addItemList ({ "1/4", "1/8.", "1/8", "1/16" }, 1);
@@ -363,7 +353,6 @@ void DreadEditor::rebuildPresetMenu()
     presetBox.addItem ("Show presets folder", kShowFolderId);
     lastPresetId = proc.getCurrentProgram() + 1;
     presetBox.setSelectedId (lastPresetId, juce::dontSendNotification);
-    updateDeleteState();
 }
 
 void DreadEditor::presetMenuChanged()
@@ -385,33 +374,16 @@ void DreadEditor::presetMenuChanged()
         }
         else
         {
-            confirmDeleteCurrent();
+            const int prog = proc.getCurrentProgram();
+            const auto name = proc.getProgramName (prog);
+            showConfirm ("Delete Preset", "Delete the user preset \"" + name + "\"?\nThis can't be undone.", "Delete",
+                         [this, prog] { proc.deleteUserPreset (prog); rebuildPresetMenu(); });
         }
         return;
     }
     lastPresetId = id;
     proc.setCurrentProgram (id - 1);
-    updateDeleteState();
-}
-
-void DreadEditor::updateDeleteState()
-{
-    const bool user = proc.isUserPreset (proc.getCurrentProgram());
-    deleteButton.setEnabled (user);
-    presetBox.setItemEnabled (kDeleteId, user);
-}
-
-void DreadEditor::confirmDeleteCurrent()
-{
-    const int prog = proc.getCurrentProgram();
-    if (! proc.isUserPreset (prog)) return;                  // factory presets are protected
-    const auto name = proc.getProgramName (prog);
-    showConfirm ("DELETE PRESET", "Delete the user preset \"" + name + "\"?\nThis can't be undone.", "Delete",
-                 [this, prog, name]
-                 {
-                     if (proc.getProgramName (prog) == name) proc.deleteUserPreset (prog);   // still the same preset
-                     rebuildPresetMenu();
-                 });
+    presetBox.setItemEnabled (kDeleteId, proc.isUserPreset (id - 1));
 }
 
 void DreadEditor::closeDialog()
@@ -513,13 +485,11 @@ void DreadEditor::resized()
     auto r = getLocalBounds().reduced (14);
     auto header = r.removeFromTop (60);
     logoArea  = header.withWidth (300);
-    auto presetArea = header.removeFromRight (318);
-    deleteButton.setBounds (presetArea.removeFromRight (70).withSizeKeepingCentre (70, 28));
-    presetArea.removeFromRight (5);
-    saveButton.setBounds (presetArea.removeFromRight (58).withSizeKeepingCentre (58, 28));
+    auto presetArea = header.removeFromRight (250);
+    saveButton.setBounds (presetArea.removeFromRight (64).withSizeKeepingCentre (64, 28));
     presetArea.removeFromRight (6);
     presetBox.setBounds (presetArea.withSizeKeepingCentre (presetArea.getWidth(), 28));
-    badgeArea = juce::Rectangle<int> (0, 0, 392, 52).withCentre ({ 486, header.getCentreY() });
+    badgeArea = juce::Rectangle<int> (0, 0, 420, 52).withCentre ({ getWidth() / 2 - 10, header.getCentreY() });
 
     keyboard.setBounds (r.removeFromBottom (60));
     keyboard.setKeyWidth ((float) keyboard.getWidth() / 50.0f);
@@ -724,7 +694,7 @@ void DreadEditor::buildBackdrop()
     // CASTLE DANGER MC badge
     plateFrame (badge, false);
     g.setColour (pal::paint.withAlpha (0.25f)); g.drawRect (badge.reduced (5.0f), 1.0f);
-    auto brand = tex::distressedText ("CASTLE DANGER MUSIC COMPANY", badgeArea.getWidth() - 30, badgeArea.getHeight() - 8, tex::stencil (23.5f),
+    auto brand = tex::distressedText ("CASTLE DANGER MUSIC COMPANY", badgeArea.getWidth() - 30, badgeArea.getHeight() - 8, tex::stencil (25.0f),
                                       juce::Colour (0xffeadfc4), juce::Justification::centred, scale, 0.24f, 4242, 0.14f);
     g.setColour (juce::Colours::black);
     g.setOpacity (0.7f); g.drawImage (brand, badge.reduced (15.0f, 4.0f).translated (1.5f, 2.0f));
@@ -768,7 +738,7 @@ void DreadEditor::timerCallback()
         if (presetBox.indexOfItemId (proc.getCurrentProgram() + 1) < 0) rebuildPresetMenu();
         lastPresetId = proc.getCurrentProgram() + 1;
         presetBox.setSelectedId (lastPresetId, juce::dontSendNotification);
-        updateDeleteState();
+        presetBox.setItemEnabled (kDeleteId, proc.isUserPreset (proc.getCurrentProgram()));
     }
     if (std::abs (flicker - before) > 0.01f) repaint (logoArea.withHeight (54).withWidth (270));
 }

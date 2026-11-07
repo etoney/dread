@@ -48,34 +48,6 @@ int main (int argc, char** argv)
         check (proc.getNumPrograms() == before && ! proc.userPresetExists (name), "preset gone after delete");
         check (! proc.deleteUserPreset (0), "factory preset cannot be deleted");
 
-        // ---- DELETE button: disabled for factory presets, enabled for user presets
-        {
-            juce::TextButton* del = nullptr;
-            for (auto* c : ed->getChildren())
-                if (auto* tb = dynamic_cast<juce::TextButton*> (c)) if (tb->getButtonText() == "DELETE") del = tb;
-            check (del != nullptr, "DELETE button exists");
-            if (del != nullptr)
-            {
-                proc.setCurrentProgram (0);
-                ed.reset (proc.createEditor());   // fresh editor reads current program
-                for (auto* c : ed->getChildren()) if (auto* tb = dynamic_cast<juce::TextButton*> (c)) if (tb->getButtonText() == "DELETE") del = tb;
-                check (! del->isEnabled(), "DELETE disabled on factory preset");
-                check (proc.saveUserPreset ("CI Delete Me"), "save preset for delete test");
-                ed.reset (proc.createEditor());
-                for (auto* c : ed->getChildren()) if (auto* tb = dynamic_cast<juce::TextButton*> (c)) if (tb->getButtonText() == "DELETE") del = tb;
-                check (del->isEnabled(), "DELETE enabled on user preset");
-                del->onClick();
-                bool confirm = false;
-                for (auto* c : ed->getChildren()) if (dynamic_cast<juce::AlertWindow*> (c) != nullptr) confirm = true;
-                check (confirm, "DELETE asks for confirmation");
-                check (proc.userPresetExists ("CI Delete Me"), "nothing deleted before confirming");
-                check (writePng (ed->createComponentSnapshot (ed->getLocalBounds(), true, 2.0f), dir.getChildFile ("gui_delete.png")), "delete dialog snapshot");
-                proc.deleteUserPreset (proc.getCurrentProgram());
-                proc.setCurrentProgram (0);
-                ed.reset (proc.createEditor());
-            }
-        }
-
         // ---- click SAVE and capture the dialog
         juce::TextButton* save = nullptr;
         for (auto* c : ed->getChildren())
