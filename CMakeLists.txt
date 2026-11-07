@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(DREAD VERSION 1.2.0)
+project(DREAD VERSION 1.3.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -53,3 +53,11 @@ add_executable(dread_render test/render_demo.cpp)
 add_executable(dread_render_new test/render_new_sounds.cpp)
 target_include_directories(dread_render_new PRIVATE Source)
 target_include_directories(dread_render PRIVATE Source)
+
+# Headless GUI snapshot (CI renders the editor to gui.png for review)
+juce_add_console_app(DreadSnapshot PRODUCT_NAME "DreadSnapshot")
+target_sources(DreadSnapshot PRIVATE test/snapshot.cpp Source/PluginProcessor.cpp Source/PluginEditor.cpp)
+target_compile_definitions(DreadSnapshot PRIVATE
+    JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0
+    "JucePlugin_VersionString=\"${PROJECT_VERSION}\"")
+target_link_libraries(DreadSnapshot PRIVATE juce::juce_audio_utils juce::juce_dsp PUBLIC juce::juce_recommended_config_flags)
