@@ -95,6 +95,16 @@ FILTER / AMP
   RELEASE ..... How long the note rings after you let go.
 
 DISTORTION
+  TYPE MENU ... Tube ........... warm, slightly uneven clipping
+                Tape ........... soft, squashed saturation
+                Fuzz ........... hard clipping plus an octave-up buzz
+                Wavefold ....... metallic and alien
+                Bitcrush ....... lo-fi grit down to "broken toy"
+                Blown Speaker .. torn speaker cone that crackles and cuts out
+  DRIVE ....... How much distortion. 0 = off. Level-matched, so turning it up
+                adds grit without a big volume jump.
+  TONE ........ Darkens the distorted sound to tame harshness.
+  MIX ......... Blend of clean and distorted sound.
 
 MACROS: one knob changes many things at once
   DREAD ....... The "make it worse" knob. Turning it up makes the pitch drift
