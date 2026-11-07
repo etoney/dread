@@ -166,6 +166,72 @@ struct Params
     float pianoLevel = 0.0f, pianoBreak = 0.5f;
     float whisperLevel = 0.0f, whisperDemon = 0.4f;
     float screamLevel = 0.0f, screamRasp = 0.4f;
+    // Distortion
+    float distDrive = 0.0f, distTone = 0.7f, distMix = 1.0f; int distType = 0;
+};
+
+//==============================================================================
+// Multi-mode distortion (one instance per channel).
+// Types: 0 Tube, 1 Tape, 2 Fuzz, 3 Wavefold, 4 Bitcrush, 5 Blown Speaker
+class Distortion
+{
+public:
+    static constexpr int kNumTypes = 6;
+    void prepare (float sampleRate, uint32_t seed) { sr = sampleRate; rng = Rng (seed); hold = 0; holdCount = 0; crackle = 0; }
+    void setTone (float tone) { toneLp.setCutoff (700.0f * std::pow (24.0f, tone), sr); }   // 700 Hz .. ~16.8 kHz
+
+    float process (float x, float drive, int type, float mix)
+    {
+        const float g = 1.0f + drive * drive * 45.0f;
+        float y;
+        switch (type)
+        {
+            case 0: // Tube: asymmetric soft clip (even harmonics)
+                y = std::tanh (x * g + 0.25f) - 0.2449f;
+                y *= 1.0f / (1.0f + drive * 2.2f);
+                break;
+            case 1: // Tape: gentle saturation that compresses
+            {
+                const float v = x * (1.0f + drive * drive * 18.0f);
+                y = v / (1.0f + std::abs (v));
+                y *= 1.0f / (1.0f + drive * 1.6f);
+                break;
+            }
+            case 2: // Fuzz: hard clip + rectified octave-up
+            {
+                const float v = clampf (x * g * 2.0f, -1.0f, 1.0f);
+                y = (v * 0.7f + std::abs (v) * 0.45f * drive) / (1.0f + drive * 3.0f);
+                break;
+            }
+            case 3: // Wavefold: sine folder, gets metallic fast
+                y = std::sin (x * (1.0f + drive * 14.0f) * 1.5708f) / (1.0f + drive * 2.5f);
+                break;
+            case 4: // Bitcrush: bit depth 16 -> 3 bits, sample-rate down to ~1/40
+            {
+                const int factor = 1 + (int) (drive * drive * 40.0f);
+                if (++holdCount >= factor) { holdCount = 0; hold = x; }
+                const float bits = 16.0f - drive * 13.0f;
+                const float steps = std::pow (2.0f, bits - 1.0f);
+                y = std::round (hold * steps) / steps;
+                break;
+            }
+            default: // Blown Speaker: harsh asymmetric clip, a cone that bottoms out, crackling dropouts
+            {
+                float v = std::tanh (x * g * 1.5f);
+                v = std::min (v, 0.55f);
+                if (crackle > 0) { --crackle; v *= 0.08f; }
+                else if (rng.uni() < drive * 0.004f * std::abs (v) * 4.0f) crackle = 20 + (int) (rng.uni() * 300.0f);
+                y = v / (1.0f + drive * 1.8f);
+                break;
+            }
+        }
+        y = toneLp.lp (y);
+        return x + (y - x) * mix;
+    }
+
+private:
+    float sr = 48000, hold = 0; int holdCount = 0, crackle = 0;
+    Rng rng; OnePole toneLp;
 };
 
 //==============================================================================
@@ -620,6 +686,7 @@ public:
         wobL.init ((int) (sr * 0.05f)); wobR.init ((int) (sr * 0.05f));
         delayDamp[0].setCutoff (3500.0f, sr); delayDamp[1].setCutoff (3500.0f, sr);
         bodyL.setCutoff (120.0f, sr); bodyR.setCutoff (120.0f, sr);
+        distL.prepare (sr, 91u); distR.prepare (sr, 913u);
         gateSmooth.setCutoff (60.0f, sr);
         dcL.setCutoff (12.0f, sr); dcR.setCutoff (12.0f, sr);
         reset();
@@ -693,6 +760,7 @@ public:
         const float tormentMk  = 1.0f / std::pow (tormentPre, 0.62f);
         const float ringInc    = p.ringFreq / sr;
         const float outGain    = dbToGain (p.outputDb);
+        distL.setTone (p.distTone); distR.setTone (p.distTone);
         wobDrift[0].setRate (0.6f + wobble * 2.0f, sr); wobDrift[1].setRate (0.7f + wobble * 2.3f, sr);
 
         for (int i = 0; i < n; ++i)
@@ -710,6 +778,13 @@ public:
             {
                 l += bodyL.lp (l) * p.torment * 1.5f; r += bodyR.lp (r) * p.torment * 1.5f;
                 l = std::tanh (l * tormentPre) * tormentMk; r = std::tanh (r * tormentPre) * tormentMk;
+            }
+
+            // Distortion
+            if (p.distDrive > 0.001f)
+            {
+                l = distL.process (l, p.distDrive, p.distType, p.distMix);
+                r = distR.process (r, p.distDrive, p.distType, p.distMix);
             }
 
             // Step gate
@@ -759,6 +834,7 @@ private:
     FDNReverb reverb;
     DelayLine delayL, delayR, wobL, wobR;
     OnePole delayDamp[2], bodyL, bodyR, gateSmooth, dcL, dcR;
+    Distortion distL, distR;
     std::array<Drift, 2> wobDrift; Rng rng { 4242u };
     float ringPhase = 0; double freeBeat = 0;
 };

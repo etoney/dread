@@ -95,6 +95,7 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     sec ("BROKEN PIANO",   { makeKnob ("pianoLevel", "Level"), makeKnob ("pianoBreak", "Break") });
     sec ("DEMON WHISPERS", { makeKnob ("whisperLevel", "Level"), makeKnob ("whisperDemon", "Demon") });
     sec ("SCREAMS",        { makeKnob ("screamLevel", "Level"), makeKnob ("screamRasp", "Rasp") });
+    sec ("DISTORTION",     { makeKnob ("distDrive", "Drive"), makeKnob ("distTone", "Tone"), makeKnob ("distMix", "Mix") });
 
     for (int i = 0; i < proc.getNumPrograms(); ++i) presetBox.addItem (proc.getProgramName (i), i + 1);
     presetBox.setSelectedId (proc.getCurrentProgram() + 1, juce::dontSendNotification);
@@ -103,7 +104,9 @@ DreadEditor::DreadEditor (DreadProcessor& p)
 
     gateRateBox.addItemList ({ "1/8", "1/16", "1/32", "1/16T" }, 1);
     delayTimeBox.addItemList ({ "1/4", "1/8.", "1/8", "1/16" }, 1);
-    addAndMakeVisible (gateRateBox); addAndMakeVisible (delayTimeBox);
+    distTypeBox.addItemList ({ "Tube", "Tape", "Fuzz", "Wavefold", "Bitcrush", "Blown Speaker" }, 1);
+    addAndMakeVisible (gateRateBox); addAndMakeVisible (delayTimeBox); addAndMakeVisible (distTypeBox);
+    distTypeAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "distType", distTypeBox);
     gateRateAtt  = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "gateRate", gateRateBox);
     delayTimeAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delayTime", delayTimeBox);
 
@@ -187,8 +190,10 @@ void DreadEditor::resized()
 
     auto a = splitRow (row1, { 4, 3, 2, 3 });
     for (int i = 0; i < 4; ++i) layoutSection (sections[(size_t) i], a[(size_t) i]);
-    auto src = splitRow (rowSrc, { 1, 1, 1 });
-    for (int i = 0; i < 3; ++i) layoutSection (sections[(size_t) (8 + i)], src[(size_t) i]);
+    auto src = splitRow (rowSrc, { 2, 2, 2, 3 });
+    for (int i = 0; i < 4; ++i) layoutSection (sections[(size_t) (8 + i)], src[(size_t) i]);
+    auto ds = sections[11].bounds;
+    distTypeBox.setBounds (ds.getRight() - 128, ds.getY() + 4, 120, 20);
     auto b = splitRow (row2, { 1, 1 });
     layoutSection (sections[4], b[0]); layoutSection (sections[5], b[1]);
     auto c = splitRow (row3, { 7, 2 });

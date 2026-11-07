@@ -99,6 +99,11 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
     for (int i = 0; i < 16; ++i)
         ps.push_back (std::make_unique<AudioParameterBool> (ParameterID { "gate" + String (i), 1 },
                                                            "Gate Step " + String (i + 1), defSteps[i]));
+    add ("distDrive", "Distortion Drive", 0, 1, 0);
+    add ("distTone", "Distortion Tone", 0, 1, 0.7f);
+    add ("distMix", "Distortion Mix", 0, 1, 1.0f);
+    ps.push_back (std::make_unique<AudioParameterChoice> (ParameterID { "distType", 1 }, "Distortion Type",
+                                                         StringArray { "Tube", "Tape", "Fuzz", "Wavefold", "Bitcrush", "Blown Speaker" }, 0));
     add ("delayMix", "Delay Mix", 0, 1, 0.15f);
     add ("delayFeedback", "Delay Feedback", 0, 0.95f, 0.45f);
     ps.push_back (std::make_unique<AudioParameterChoice> (ParameterID { "delayTime", 1 }, "Delay Time",
@@ -147,6 +152,7 @@ void DreadProcessor::pullParams()
     p.ringMix = get ("ringMix"); p.ringFreq = get ("ringFreq"); p.wobble = get ("wobble");
     p.gateDepth = get ("gateDepth"); p.gateRate = (int) get ("gateRate");
     for (int i = 0; i < 16; ++i) p.gateSteps[(size_t) i] = gatePtrs[(size_t) i]->load() > 0.5f;
+    p.distDrive = get ("distDrive"); p.distTone = get ("distTone"); p.distMix = get ("distMix"); p.distType = (int) get ("distType");
     p.delayMix = get ("delayMix"); p.delayFeedback = get ("delayFeedback"); p.delayTime = (int) get ("delayTime");
     p.reverbMix = get ("reverbMix"); p.reverbSize = get ("reverbSize");
     p.stingLevel = get ("stingLevel"); p.stingZone = get ("stingZone") > 0.5f;
