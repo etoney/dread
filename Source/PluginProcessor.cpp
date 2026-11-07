@@ -59,6 +59,13 @@ const std::vector<Preset>& presets()
                              { "symphonyLevel", 1.0f }, { "symphonyTwist", 0.4f }, { "symphonySection", 0.85f }, { "dread", 0.3f },
                              { "torment", 0.25f }, { "attack", 0.25f }, { "sustain", 1.0f }, { "release", 2.0f },
                              { "cutoff", 7000.0f }, { "envAmount", 0.0f }, { "reverbMix", 0.5f }, { "reverbSize", 0.9f } } },
+        { "Satanic Strings", { { "droneLevel", 0.25f }, { "droneSub", 0.7f }, { "droneDetune", 0.5f }, { "metalLevel", 0.0f },
+                               { "airLevel", 0.0f }, { "symphonyLevel", 1.0f }, { "symphonyTwist", 0.8f }, { "symphonySection", 0.1f },
+                               { "whisperLevel", 0.35f }, { "whisperDemon", 0.85f }, { "airMotion", 0.35f }, { "dread", 0.6f },
+                               { "torment", 0.3f }, { "distDrive", 0.25f }, { "distType", 0.0f }, { "distMix", 0.6f },
+                               { "ringMix", 0.12f }, { "ringFreq", 33.0f }, { "attack", 0.45f }, { "sustain", 1.0f },
+                               { "release", 3.5f }, { "cutoff", 6500.0f }, { "envAmount", 0.0f }, { "wobble", 0.3f },
+                               { "reverbMix", 0.6f }, { "reverbSize", 1.0f }, { "delayMix", 0.1f } } },
     };
     return p;
 }

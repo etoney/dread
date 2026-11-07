@@ -21,7 +21,7 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 
 **FX chain:** Ring mod → Torment → Distortion (Tube, Tape, Fuzz, Wavefold, Bitcrush, Blown Speaker, with Drive / Tone / Mix) → 16-step tempo-synced Gate → Wobble (tape warble) → Ping-pong delay → 8-line FDN reverb (up to ~13 s tails) → Output.
 
-16 factory presets: Unease (Default), Basement Hum, Bowed Morgue, Whispers Behind You, Heartbeat Gate, Asylum Pulse, Total Dread, Shock Stabs, Broken Piano, Demonic Whispers, Screams, Haunted Parlor, Rusty Chains, Dungeon, Twisted Symphony, Funeral Brass.
+17 factory presets: Unease (Default), Basement Hum, Bowed Morgue, Whispers Behind You, Heartbeat Gate, Asylum Pulse, Total Dread, Shock Stabs, Broken Piano, Demonic Whispers, Screams, Haunted Parlor, Rusty Chains, Dungeon, Twisted Symphony, Funeral Brass, Satanic Strings.
 
 ## Building
 Requirements: CMake 3.22+, Git, and a C++17 compiler (Xcode on macOS, Visual Studio 2022 on Windows). JUCE is downloaded automatically.

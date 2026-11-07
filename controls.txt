@@ -15,7 +15,7 @@ Tip: double-click a value readout under a knob to type an exact number
 HEADER
 -------------------------------------------------------------------------------
   PRESET MENU (top right)
-      Loads one of the 16 factory sounds, or one of your own saved presets
+      Loads one of the 17 factory sounds, or one of your own saved presets
       (listed under USER PRESETS). Each preset resets every knob to its
       default first, then applies its own settings.
 
@@ -23,6 +23,7 @@ HEADER
       Heartbeat Gate     Asylum Pulse       Total Dread       Shock Stabs
       Broken Piano       Demonic Whispers   Screams           Haunted Parlor
       Rusty Chains       Dungeon            Twisted Symphony  Funeral Brass
+      Satanic Strings
 
       "Unease (Default)" is the starting-point sound: every knob at its
       default setting. Start here to build your own sound from scratch.
