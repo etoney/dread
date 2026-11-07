@@ -25,6 +25,12 @@ int main (int argc, char** argv)
         std::unique_ptr<juce::AudioProcessorEditor> ed (proc.createEditor());
         check (writePng (ed->createComponentSnapshot (ed->getLocalBounds(), true, 2.0f), dir.getChildFile ("gui.png")), "main snapshot");
 
+        // ---- preset folder location (matches Possessed)
+        const auto folder = DreadProcessor::getUserPresetFolder().getFullPathName();
+        std::printf ("preset folder: %s\n", folder.toRawUTF8());
+       #if JUCE_MAC
+        check (folder.contains ("Library/Application Support/Castle Danger/DREAD/Presets"), "preset folder is in Application Support");
+       #endif
         // ---- preset round trip
         const juce::String name = "CI Test Preset";
         const int before = proc.getNumPrograms();

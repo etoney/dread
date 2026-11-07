@@ -39,8 +39,10 @@ HEADER
       Refresh preset list .......... picks up preset files you've added or
                                      removed by hand.
       Show presets folder .......... opens the folder where presets live:
-          Mac:     Documents/Castle Danger Music Company/DREAD/Presets
-          Windows: Documents\Castle Danger Music Company\DREAD\Presets
+          Mac:     ~/Library/Application Support/Castle Danger/DREAD/Presets
+          Windows: %APPDATA%\Castle Danger\DREAD\Presets
+      (Same place Possessed keeps its presets. The Mac Library folder is
+      hidden: use "Show presets folder" or Finder > Go > Go to Folder.)
       Each preset is one ".dreadpreset" file. Copy them to back up your
       sounds or share them with another computer.
 

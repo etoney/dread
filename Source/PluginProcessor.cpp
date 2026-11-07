@@ -248,10 +248,34 @@ void DreadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiB
 // Programs = factory presets followed by the user's saved presets.
 int DreadProcessor::getNumFactoryPresets() const { return (int) presets().size(); }
 
+// Same location scheme as Possessed:
+//   macOS:   ~/Library/Application Support/Castle Danger/DREAD/Presets
+//   Windows: %APPDATA%\Castle Danger\DREAD\Presets
 juce::File DreadProcessor::getUserPresetFolder()
 {
-    return juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
-               .getChildFile ("Castle Danger Music Company").getChildFile ("DREAD").getChildFile ("Presets");
+    auto base = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory); // ~/Library on macOS, %APPDATA% on Windows
+   #if JUCE_MAC
+    base = base.getChildFile ("Application Support");
+   #endif
+    return base.getChildFile ("Castle Danger").getChildFile ("DREAD").getChildFile ("Presets");
+}
+
+// v1.5.0 saved presets in Documents/Castle Danger Music Company/DREAD/Presets.
+// Move any found there into the new folder (never overwriting), then tidy up empty folders.
+static void migrateOldPresetFolder (const juce::File& newFolder)
+{
+    const auto company = juce::File::getSpecialLocation (juce::File::userDocumentsDirectory).getChildFile ("Castle Danger Music Company");
+    const auto oldFolder = company.getChildFile ("DREAD").getChildFile ("Presets");
+    if (! oldFolder.isDirectory()) return;
+    newFolder.createDirectory();
+    for (const auto& f : oldFolder.findChildFiles (juce::File::findFiles, false, "*.dreadpreset"))
+    {
+        const auto dest = newFolder.getChildFile (f.getFileName());
+        if (! dest.exists()) f.moveFileTo (dest);
+    }
+    for (auto dir : { oldFolder, oldFolder.getParentDirectory(), company })
+        if (dir.isDirectory() && dir.findChildFiles (juce::File::findFilesAndDirectories, false).isEmpty())
+            dir.deleteFile();
 }
 
 juce::File DreadProcessor::fileForPreset (const juce::String& name) const
@@ -261,6 +285,7 @@ juce::File DreadProcessor::fileForPreset (const juce::String& name) const
 
 void DreadProcessor::refreshUserPresets()
 {
+    migrateOldPresetFolder (getUserPresetFolder());
     juce::StringArray names;
     for (const auto& f : getUserPresetFolder().findChildFiles (juce::File::findFiles, false, "*.dreadpreset"))
         names.add (f.getFileNameWithoutExtension());
