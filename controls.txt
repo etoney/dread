@@ -34,9 +34,13 @@ HEADER
       to replace it. Your presets appear in the menu under USER PRESETS and
       work in every project.
 
+  DELETE BUTTON (next to SAVE)
+      Deletes the selected user preset. You'll be asked to confirm first;
+      nothing is removed until you click DELETE in that box. The button is
+      greyed out for factory presets, which can't be deleted.
+
   Bottom of the preset menu:
-      Delete current user preset ... removes the selected user preset
-                                     (factory presets can't be deleted).
+      Delete current user preset ... same as the DELETE button.
       Refresh preset list .......... picks up preset files you've added or
                                      removed by hand.
       Show presets folder .......... opens the folder where presets live:
