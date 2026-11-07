@@ -42,6 +42,8 @@ jobs:
           path: |
             readme.txt
             controls.txt
+            LICENSE.txt
+            THIRD-PARTY-NOTICES.txt
             build/DREAD_artefacts/Release/VST3
             build/DREAD_artefacts/Release/AU
             build/DREAD_artefacts/Release/Standalone
