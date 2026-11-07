@@ -1,0 +1,152 @@
+===============================================================================
+  DREAD  //  CONTROLS QUICK REFERENCE
+  Castle Danger MC
+===============================================================================
+
+Controls are listed top to bottom, left to right, the same way they're laid
+out on the plugin. Every sound source has its own LEVEL knob, so you can stack
+as many sources as you like.
+
+Tip: double-click a value readout under a knob to type an exact number
+(e.g. "250 ms", "2.5 kHz", "40%").
+
+
+-------------------------------------------------------------------------------
+HEADER
+-------------------------------------------------------------------------------
+  PRESET MENU (top right)
+      Loads one of the 12 factory sounds. Each preset resets every knob to its
+      default first, then applies its own settings.
+
+      Init: Unease       Basement Hum       Bowed Morgue      Whispers Behind You
+      Heartbeat Gate     Asylum Pulse       Total Dread       Shock Stabs
+      Broken Piano       Demonic Whispers   Screams           Haunted Parlor
+
+
+-------------------------------------------------------------------------------
+ROW 1: ORIGINAL SOUND SOURCES + MACROS
+-------------------------------------------------------------------------------
+DRONE: the low, dark synth bed
+  LEVEL ....... Volume of the drone.
+  DETUNE ...... Spreads its 5 oscillators out of tune with each other.
+                Low = thick. High = sour and queasy.
+  FOLD ........ Wavefolding. Adds harsh, buzzy overtones.
+  SUB ......... Adds a pure tone one octave below, for rumble.
+
+METAL: bowed metal (a bow dragged across a cymbal or rusty rail)
+  LEVEL ....... Volume of the metal.
+  BOW ......... How long the metal rings. High = sings and sustains.
+                Low = short and scraped.
+  TONE ........ Low = dark and dull. High = bright and shrill.
+
+AIR: breathy noise shaped like faint vowels
+  LEVEL ....... Volume of the air.
+  MOTION ...... How fast the vowel shapes drift. ALSO sets how fast the
+                Demon Whispers "talk".
+
+MACROS: one knob changes many things at once
+  DREAD ....... The "make it worse" knob. Turning it up makes the pitch drift
+                more seasick, darkens the filter, and adds ring-mod clang, sub
+                rumble, extra whisper, tape warble and a bigger reverb.
+                (The logo flickers more, too.)
+  TORMENT ..... Adds low-end weight, then crushes everything with heavy
+                saturation. Good for aggressive hits.
+
+
+-------------------------------------------------------------------------------
+ROW 2: NEWER SOURCES + DISTORTION
+-------------------------------------------------------------------------------
+BROKEN PIANO
+  LEVEL ....... Volume of the piano.
+  BREAK ....... How wrecked the piano is.
+                0   = clean, slightly detuned piano.
+                Up  = keys pulled out of tune (the same key is always wrong
+                      the same way), rattling strings, missing overtones,
+                      and some dead keys that just thud.
+  TIP: Use a short ATTACK (under 10 ms) so it sounds struck. A long attack
+       turns it into a creepy reversed-piano swell.
+
+DEMON WHISPERS
+  LEVEL ....... Volume of the whispers.
+  DEMON ....... 0  = two people whispering gibberish around you.
+                Up = deeper throats plus a guttural growl underneath.
+  (Talking speed comes from AIR > MOTION.)
+
+SCREAMS
+  LEVEL ....... Volume of the screams.
+  RASP ........ Turns a clean wail into a shredded, gravelly throat.
+  Each note swoops up into the scream, and the vibrato gets wilder the longer
+  you hold it. Play several notes for a crowd. Best in the middle and upper
+  range of the keyboard.
+
+DISTORTION
+  TYPE MENU ... Tube ........... warm, slightly uneven clipping
+                Tape ........... soft, squashed saturation
+                Fuzz ........... hard clipping plus an octave-up buzz
+                Wavefold ....... metallic and alien
+                Bitcrush ....... lo-fi grit down to "broken toy"
+                Blown Speaker .. torn speaker cone that crackles and cuts out
+  DRIVE ....... How much distortion. 0 = off. Level-matched, so turning it up
+                adds grit without a big volume jump.
+  TONE ........ Darkens the distorted sound to tame harshness.
+  MIX ......... Blend of clean and distorted sound.
+
+
+-------------------------------------------------------------------------------
+ROW 3: SHAPING + EFFECTS
+-------------------------------------------------------------------------------
+FILTER / AMP
+  CUTOFF ...... Brightness. Turn down for muffled, "from another room" sounds.
+  RESO ........ Adds a whistling, nasal peak at the cutoff point.
+  ENV ......... Makes the filter open as each note starts, then close again.
+  ATTACK ...... Fade-in time. Short = a hit. Long = a swell.
+  DECAY ....... How quickly the note drops to the sustain level.
+  SUSTAIN ..... The level held while you keep the key down.
+  RELEASE ..... How long the note rings after you let go.
+
+FX  (in signal order: Ring > Torment > Distortion > Gate > Wobble > Delay > Reverb)
+  RING ........ Amount of ring modulation (clangy, robotic).
+  RING HZ ..... Ring-mod speed. ~20-60 Hz = throbbing wobble.
+                Higher = metallic tones.
+  WOBBLE ...... Warped-tape pitch warble (seasick, haunted VHS).
+  DELAY ....... Echo volume. Echoes bounce left and right.
+  FEEDBACK .... How many times the echo repeats.
+  TIME MENU ... Echo time synced to your song's tempo: 1/4, 1/8. (dotted),
+                1/8, 1/16.
+  REVERB ...... Amount of room sound.
+  SIZE ........ Room size. High = huge, cavernous tails (up to ~13 seconds).
+
+
+-------------------------------------------------------------------------------
+ROW 4: GATE + STING
+-------------------------------------------------------------------------------
+GATE: a rhythmic chopper synced to your song's tempo
+  16 STEPS .... Lit = sound passes. Dark = sound is cut. Click to toggle.
+  RATE MENU ... Step length: 1/8, 1/16, 1/32, 1/16T (triplets).
+  DEPTH ....... How hard dark steps cut. 0 = gate off. 100% = full stutter.
+  TIP: Depth + Torment = heartbeat pulse.
+
+STING: jumpscares
+  STING ZONE C6+ .. When ticked, any note C6 or higher fires a one-shot
+                    jumpscare (noise slam + pitch dive-bomb + metallic clang)
+                    instead of a normal note.
+  LEVEL ........... Volume of the stings.
+  OUTPUT .......... Master volume for the whole plugin.
+
+KEYBOARD
+  Click to play notes without a MIDI controller.
+
+
+-------------------------------------------------------------------------------
+QUICK RECIPES
+-------------------------------------------------------------------------------
+  Instant horror bed .... Start from "Init: Unease", raise DREAD, add METAL.
+  Haunted piano ......... "Broken Piano" preset, raise BREAK, add a little
+                          DEMON WHISPERS.
+  Chase-scene pulse ..... "Asylum Pulse" preset, raise TORMENT, set
+                          DISTORTION to Fuzz.
+  Possessed choir ....... "Screams" preset, hold 3-4 high notes, RASP up,
+                          DISTORTION to Blown Speaker.
+  Jumpscares ............ Any preset. Play C6 and up.
+
+===============================================================================

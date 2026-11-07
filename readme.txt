@@ -7,6 +7,9 @@ This guide covers installing plugin files by hand (no installer), including
 plugins that are not signed or notarized by Apple. Examples use DREAD, but the
 steps work for any .vst3 or .component file.
 
+For what every knob and button does, see controls.txt (included in this
+download).
+
   - VST3 plugin file:  DREAD.vst3       (macOS and Windows)
   - AU plugin file:    DREAD.component  (macOS only)
 

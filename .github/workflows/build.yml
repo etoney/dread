@@ -41,6 +41,7 @@ jobs:
           name: DREAD-${{ runner.os }}
           path: |
             readme.txt
+            controls.txt
             build/DREAD_artefacts/Release/VST3
             build/DREAD_artefacts/Release/AU
             build/DREAD_artefacts/Release/Standalone
