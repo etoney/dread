@@ -337,7 +337,7 @@ void DreadEditor::resized()
     r.removeFromBottom (10);
 
     const int gap = 9;
-    const int gateH = 96;
+    const int gateH = 120;
     auto rowGate = r.removeFromBottom (gateH); r.removeFromBottom (gap);
     const int rowH = (r.getHeight() - gap * 3) / 4;
     auto rowSrcA = r.removeFromTop (rowH); r.removeFromTop (gap);
