@@ -13,6 +13,9 @@ public:
                        int buttonX, int buttonY, int buttonW, int buttonH, juce::ComboBox&) override;
     juce::Font getComboBoxFont (juce::ComboBox&) override;
     juce::Font getLabelFont (juce::Label&) override;
+    void drawButtonBackground (juce::Graphics&, juce::Button&, const juce::Colour&, bool highlighted, bool down) override;
+    juce::Font getTextButtonFont (juce::TextButton&, int buttonHeight) override;
+    void drawAlertBox (juce::Graphics&, juce::AlertWindow&, const juce::Rectangle<int>& textArea, juce::TextLayout&) override;
 
 private:
     juce::Image rustDisc;
@@ -39,6 +42,11 @@ private:
     Knob* makeKnob (const juce::String& id, const juce::String& text, bool big = false);
     void layoutSection (Section&, juce::Rectangle<int>);
     void buildBackdrop();
+    void rebuildPresetMenu();
+    void presetMenuChanged();
+    void showSaveDialog();
+    void showConfirm (const juce::String& title, const juce::String& message, const juce::String& okText, std::function<void()> onOk);
+    void closeDialog();
     void timerCallback() override;
 
     DreadProcessor& proc;
@@ -46,6 +54,10 @@ private:
     std::vector<std::unique_ptr<Knob>> knobs;
     std::vector<Section> sections;
 
+    juce::TextButton saveButton { "SAVE" };
+    std::unique_ptr<juce::AlertWindow> dialog;
+    int lastPresetId = 1;
+    static constexpr int kShowFolderId = 9001, kDeleteId = 9002, kRefreshId = 9003;
     juce::ComboBox presetBox, gateRateBox, delayTimeBox, distTypeBox, stingTypeBox;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> gateRateAtt, delayTimeAtt, distTypeAtt, stingTypeAtt;
     std::array<juce::ToggleButton, 16> steps;

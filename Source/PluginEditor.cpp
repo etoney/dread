@@ -110,6 +110,17 @@ DreadLookAndFeel::DreadLookAndFeel()
     setColour (juce::PopupMenu::highlightedBackgroundColourId, pal::rust);
     setColour (juce::PopupMenu::highlightedTextColourId, juce::Colours::white);
     setColour (juce::ToggleButton::textColourId, pal::paint);
+    setColour (juce::TextButton::textColourOffId, pal::paint);
+    setColour (juce::TextButton::textColourOnId, juce::Colours::white);
+    setColour (juce::AlertWindow::backgroundColourId, juce::Colour (0xff1a1411));
+    setColour (juce::AlertWindow::textColourId, pal::paint);
+    setColour (juce::AlertWindow::outlineColourId, pal::rust);
+    setColour (juce::TextEditor::backgroundColourId, juce::Colour (0xff0f0b09));
+    setColour (juce::TextEditor::textColourId, pal::paint);
+    setColour (juce::TextEditor::outlineColourId, juce::Colour (0xff5a3420));
+    setColour (juce::TextEditor::focusedOutlineColourId, pal::rustLight);
+    setColour (juce::TextEditor::highlightColourId, pal::rust.withAlpha (0.6f));
+    setColour (juce::CaretComponent::caretColourId, pal::signalHot);
 
     // small rust texture used on every knob face
     rustDisc = juce::Image (juce::Image::ARGB, 128, 128, true);
@@ -126,6 +137,34 @@ DreadLookAndFeel::DreadLookAndFeel()
 
 juce::Font DreadLookAndFeel::getComboBoxFont (juce::ComboBox&) { return tex::plainBold (13.0f); }
 juce::Font DreadLookAndFeel::getLabelFont (juce::Label& l) { return l.getFont(); }
+juce::Font DreadLookAndFeel::getTextButtonFont (juce::TextButton&, int h) { return tex::stencil (juce::jmin (17.0f, (float) h * 0.62f)).withExtraKerningFactor (0.08f); }
+
+void DreadLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& b, const juce::Colour&, bool hi, bool down)
+{
+    auto r = b.getLocalBounds().toFloat().reduced (0.5f);
+    g.setColour (juce::Colours::black.withAlpha (0.55f)); g.fillRoundedRectangle (r.translated (1.0f, 1.5f), 3.0f);
+    g.setGradientFill (juce::ColourGradient (down ? pal::rustDeep : juce::Colour (0xff3a2a20), 0, r.getY(),
+                                             down ? juce::Colour (0xff2a120a) : juce::Colour (0xff17110e), 0, r.getBottom(), false));
+    g.fillRoundedRectangle (r, 3.0f);
+    g.setColour (hi ? pal::rustLight : juce::Colour (0xff6a3a20)); g.drawRoundedRectangle (r, 3.0f, 1.2f);
+}
+
+void DreadLookAndFeel::drawAlertBox (juce::Graphics& g, juce::AlertWindow& w, const juce::Rectangle<int>& textArea, juce::TextLayout& layout)
+{
+    auto r = w.getLocalBounds().toFloat();
+    g.setColour (juce::Colour (0xff1a1411)); g.fillRect (r);
+    g.setGradientFill (juce::ColourGradient (pal::rustDeep.withAlpha (0.5f), 0, 0, juce::Colours::transparentBlack, 0, r.getHeight() * 0.6f, false));
+    g.fillRect (r);
+    g.setColour (pal::rust); g.drawRect (r, 2.0f);
+    g.setColour (juce::Colours::black.withAlpha (0.6f)); g.drawRect (r.reduced (2.0f), 1.0f);
+    for (auto p : { juce::Point<float> (8, 8), { r.getRight() - 8, 8 }, { 8, r.getBottom() - 8 }, { r.getRight() - 8, r.getBottom() - 8 } })
+    {
+        g.setColour (juce::Colour (0xff6a5a4c)); g.fillEllipse (p.x - 3, p.y - 3, 6, 6);
+        g.setColour (pal::rust.withAlpha (0.6f)); g.drawEllipse (p.x - 3, p.y - 3, 6, 6, 1.0f);
+    }
+    g.setColour (pal::paint);
+    layout.draw (g, textArea.toFloat());
+}
 
 void DreadLookAndFeel::drawRotarySlider (juce::Graphics& g, int x, int y, int w, int h, float pos,
                                          float startAngle, float endAngle, juce::Slider& s)
@@ -250,10 +289,13 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     sec ("DISTORTION",     { makeKnob ("distDrive", "Drive"), makeKnob ("distTone", "Tone"), makeKnob ("distMix", "Mix") });
     sec ("RUSTY CHAINS",   { makeKnob ("chainLevel", "Level"), makeKnob ("chainRattle", "Rattle"), makeKnob ("chainRust", "Rust") });
 
-    for (int i = 0; i < proc.getNumPrograms(); ++i) presetBox.addItem (proc.getProgramName (i), i + 1);
-    presetBox.setSelectedId (proc.getCurrentProgram() + 1, juce::dontSendNotification);
-    presetBox.onChange = [this] { proc.setCurrentProgram (presetBox.getSelectedId() - 1); };
+    proc.refreshUserPresets();
+    rebuildPresetMenu();
+    presetBox.onChange = [this] { presetMenuChanged(); };
     addAndMakeVisible (presetBox);
+    saveButton.setTooltip ("Save the current settings as a new preset");
+    saveButton.onClick = [this] { showSaveDialog(); };
+    addAndMakeVisible (saveButton);
 
     gateRateBox.addItemList ({ "1/8", "1/16", "1/32", "1/16T" }, 1);
     delayTimeBox.addItemList ({ "1/4", "1/8.", "1/8", "1/16" }, 1);
@@ -289,7 +331,120 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     startTimerHz (20);
 }
 
-DreadEditor::~DreadEditor() { setLookAndFeel (nullptr); }
+DreadEditor::~DreadEditor() { dialog.reset(); setLookAndFeel (nullptr); }
+
+//==============================================================================
+void DreadEditor::rebuildPresetMenu()
+{
+    presetBox.clear (juce::dontSendNotification);
+    const int f = proc.getNumFactoryPresets();
+    presetBox.addSectionHeading ("FACTORY PRESETS");
+    for (int i = 0; i < f; ++i) presetBox.addItem (proc.getProgramName (i), i + 1);
+    const auto user = proc.getUserPresetNames();
+    presetBox.addSeparator();
+    presetBox.addSectionHeading ("USER PRESETS");
+    if (user.isEmpty()) presetBox.addItem ("(none yet: click SAVE)", 8999), presetBox.setItemEnabled (8999, false);
+    for (int i = 0; i < user.size(); ++i) presetBox.addItem (user[i], f + i + 1);
+    presetBox.addSeparator();
+    presetBox.addItem ("Delete current user preset...", kDeleteId);
+    presetBox.setItemEnabled (kDeleteId, proc.isUserPreset (proc.getCurrentProgram()));
+    presetBox.addItem ("Refresh preset list", kRefreshId);
+    presetBox.addItem ("Show presets folder", kShowFolderId);
+    lastPresetId = proc.getCurrentProgram() + 1;
+    presetBox.setSelectedId (lastPresetId, juce::dontSendNotification);
+}
+
+void DreadEditor::presetMenuChanged()
+{
+    const int id = presetBox.getSelectedId();
+    if (id <= 0) return;
+    if (id == kShowFolderId || id == kDeleteId || id == kRefreshId)
+    {
+        presetBox.setSelectedId (lastPresetId, juce::dontSendNotification);   // keep showing the real preset
+        if (id == kShowFolderId)
+        {
+            auto folder = DreadProcessor::getUserPresetFolder();
+            folder.createDirectory();
+            folder.startAsProcess();
+        }
+        else if (id == kRefreshId)
+        {
+            proc.refreshUserPresets(); rebuildPresetMenu();
+        }
+        else
+        {
+            const int prog = proc.getCurrentProgram();
+            const auto name = proc.getProgramName (prog);
+            showConfirm ("Delete Preset", "Delete the user preset \"" + name + "\"?\nThis can't be undone.", "Delete",
+                         [this, prog] { proc.deleteUserPreset (prog); rebuildPresetMenu(); });
+        }
+        return;
+    }
+    lastPresetId = id;
+    proc.setCurrentProgram (id - 1);
+    presetBox.setItemEnabled (kDeleteId, proc.isUserPreset (id - 1));
+}
+
+void DreadEditor::closeDialog()
+{
+    // defer deletion: we're usually inside the dialog's own button callback
+    juce::Component::SafePointer<DreadEditor> safe (this);
+    juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->dialog.reset(); });
+}
+
+void DreadEditor::showSaveDialog()
+{
+    if (dialog != nullptr) return;
+    const auto cur = proc.getProgramName (proc.getCurrentProgram());
+    dialog = std::make_unique<juce::AlertWindow> ("SAVE PRESET", "Name your preset:", juce::MessageBoxIconType::NoIcon, this);
+    dialog->setLookAndFeel (&lnf);
+    dialog->addTextEditor ("name", proc.isUserPreset (proc.getCurrentProgram()) ? cur : juce::String(), "Preset name");
+    if (auto* te = dialog->getTextEditor ("name")) { te->setFont (tex::plainBold (15.0f)); te->setInputRestrictions (60); }
+    dialog->addButton ("SAVE", 1, juce::KeyPress (juce::KeyPress::returnKey));
+    dialog->addButton ("CANCEL", 0, juce::KeyPress (juce::KeyPress::escapeKey));
+    addAndMakeVisible (*dialog);
+    dialog->setCentrePosition (getLocalBounds().getCentre());
+    juce::Component::SafePointer<DreadEditor> safe (this);
+    dialog->enterModalState (true, juce::ModalCallbackFunction::create ([safe] (int result)
+    {
+        if (safe == nullptr || safe->dialog == nullptr) return;
+        const auto name = safe->dialog->getTextEditorContents ("name").trim();
+        safe->closeDialog();
+        if (result != 1 || name.isEmpty()) return;
+
+        auto doSave = [safe, name]
+        {
+            if (safe == nullptr) return;
+            if (! safe->proc.saveUserPreset (name))
+                safe->showConfirm ("SAVE FAILED", "Couldn't write the preset file to:\n" + DreadProcessor::getUserPresetFolder().getFullPathName(), "OK", {});
+            safe->rebuildPresetMenu();
+        };
+        if (safe->proc.userPresetExists (name))
+            juce::MessageManager::callAsync ([safe, name, doSave] { if (safe != nullptr)
+                safe->showConfirm ("PRESET EXISTS", "A preset named \"" + name + "\" already exists.\nReplace it?", "Replace", doSave); });
+        else
+            juce::MessageManager::callAsync (doSave);
+    }), false);
+    if (auto* te = dialog->getTextEditor ("name")) { te->grabKeyboardFocus(); te->selectAll(); }
+}
+
+void DreadEditor::showConfirm (const juce::String& title, const juce::String& message, const juce::String& okText, std::function<void()> onOk)
+{
+    if (dialog != nullptr) return;
+    dialog = std::make_unique<juce::AlertWindow> (title, message, juce::MessageBoxIconType::NoIcon, this);
+    dialog->setLookAndFeel (&lnf);
+    dialog->addButton (okText.toUpperCase(), 1, juce::KeyPress (juce::KeyPress::returnKey));
+    if (onOk) dialog->addButton ("CANCEL", 0, juce::KeyPress (juce::KeyPress::escapeKey));
+    addAndMakeVisible (*dialog);
+    dialog->setCentrePosition (getLocalBounds().getCentre());
+    juce::Component::SafePointer<DreadEditor> safe (this);
+    dialog->enterModalState (true, juce::ModalCallbackFunction::create ([safe, onOk] (int result)
+    {
+        if (safe == nullptr) return;
+        safe->closeDialog();
+        if (result == 1 && onOk) juce::MessageManager::callAsync (onOk);   // runs after the dialog is gone
+    }), false);
+}
 
 DreadEditor::Knob* DreadEditor::makeKnob (const juce::String& id, const juce::String& text, bool big)
 {
@@ -329,8 +484,11 @@ void DreadEditor::resized()
     auto r = getLocalBounds().reduced (14);
     auto header = r.removeFromTop (60);
     logoArea  = header.withWidth (300);
-    presetBox.setBounds (header.removeFromRight (240).withSizeKeepingCentre (240, 28));
-    badgeArea = juce::Rectangle<int> (0, 0, 440, 52).withCentre ({ getWidth() / 2 + 20, header.getCentreY() });
+    auto presetArea = header.removeFromRight (250);
+    saveButton.setBounds (presetArea.removeFromRight (64).withSizeKeepingCentre (64, 28));
+    presetArea.removeFromRight (6);
+    presetBox.setBounds (presetArea.withSizeKeepingCentre (presetArea.getWidth(), 28));
+    badgeArea = juce::Rectangle<int> (0, 0, 420, 52).withCentre ({ getWidth() / 2 - 10, header.getCentreY() });
 
     keyboard.setBounds (r.removeFromBottom (60));
     keyboard.setKeyWidth ((float) keyboard.getWidth() / 50.0f);
@@ -535,7 +693,7 @@ void DreadEditor::buildBackdrop()
     // CASTLE DANGER MC badge
     plateFrame (badge, false);
     g.setColour (pal::paint.withAlpha (0.25f)); g.drawRect (badge.reduced (5.0f), 1.0f);
-    auto brand = tex::distressedText ("CASTLE DANGER MUSIC COMPANY", badgeArea.getWidth() - 30, badgeArea.getHeight() - 8, tex::stencil (27.0f),
+    auto brand = tex::distressedText ("CASTLE DANGER MUSIC COMPANY", badgeArea.getWidth() - 30, badgeArea.getHeight() - 8, tex::stencil (25.0f),
                                       juce::Colour (0xffeadfc4), juce::Justification::centred, scale, 0.24f, 4242, 0.14f);
     g.setColour (juce::Colours::black);
     g.setOpacity (0.7f); g.drawImage (brand, badge.reduced (15.0f, 4.0f).translated (1.5f, 2.0f));
@@ -574,7 +732,12 @@ void DreadEditor::timerCallback()
     auto& rnd = juce::Random::getSystemRandom();
     const float before = flicker;
     flicker = (rnd.nextFloat() < 0.05f + d * 0.25f) ? rnd.nextFloat() : flicker * 0.5f;
-    if (presetBox.getSelectedId() != proc.getCurrentProgram() + 1)
-        presetBox.setSelectedId (proc.getCurrentProgram() + 1, juce::dontSendNotification);
+    if (dialog == nullptr && ! presetBox.isPopupActive() && presetBox.getSelectedId() != proc.getCurrentProgram() + 1)
+    {
+        if (presetBox.indexOfItemId (proc.getCurrentProgram() + 1) < 0) rebuildPresetMenu();
+        lastPresetId = proc.getCurrentProgram() + 1;
+        presetBox.setSelectedId (lastPresetId, juce::dontSendNotification);
+        presetBox.setItemEnabled (kDeleteId, proc.isUserPreset (proc.getCurrentProgram()));
+    }
     if (std::abs (flicker - before) > 0.01f) repaint (logoArea.withHeight (54).withWidth (270));
 }

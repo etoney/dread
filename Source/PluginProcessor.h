@@ -32,6 +32,16 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
+
+    // ---- user presets (saved as files in Documents/Castle Danger Music Company/DREAD/Presets)
+    static juce::File getUserPresetFolder();
+    int getNumFactoryPresets() const;
+    juce::StringArray getUserPresetNames() const;
+    void refreshUserPresets();
+    bool userPresetExists (const juce::String& name) const;
+    bool saveUserPreset (const juce::String& name);      // saves current settings, selects it
+    bool deleteUserPreset (int programIndex);
+    bool isUserPreset (int programIndex) const { return programIndex >= getNumFactoryPresets(); }
     juce::AudioProcessorValueTreeState apvts;
     juce::MidiKeyboardState keyboardState;
 
@@ -42,6 +52,10 @@ private:
     dread::Engine engine;
     std::array<std::atomic<float>*, 16> gatePtrs {};
     int currentProgram = 0;
+    juce::StringArray userPresets;              // sorted names, guarded by presetLock
+    mutable juce::CriticalSection presetLock;
+    juce::File fileForPreset (const juce::String& name) const;
+    void selectProgramByName (const juce::String& name);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DreadProcessor)
 };

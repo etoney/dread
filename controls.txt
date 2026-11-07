@@ -15,7 +15,8 @@ Tip: double-click a value readout under a knob to type an exact number
 HEADER
 -------------------------------------------------------------------------------
   PRESET MENU (top right)
-      Loads one of the 12 factory sounds. Each preset resets every knob to its
+      Loads one of the 14 factory sounds, or one of your own saved presets
+      (listed under USER PRESETS). Each preset resets every knob to its
       default first, then applies its own settings.
 
       Unease (Default)   Basement Hum       Bowed Morgue      Whispers Behind You
@@ -25,6 +26,23 @@ HEADER
 
       "Unease (Default)" is the starting-point sound: every knob at its
       default setting. Start here to build your own sound from scratch.
+
+  SAVE BUTTON (next to the preset menu)
+      Saves every current setting as a new preset. Type a name and press
+      SAVE (or Return). If the name is already used, you'll be asked whether
+      to replace it. Your presets appear in the menu under USER PRESETS and
+      work in every project.
+
+  Bottom of the preset menu:
+      Delete current user preset ... removes the selected user preset
+                                     (factory presets can't be deleted).
+      Refresh preset list .......... picks up preset files you've added or
+                                     removed by hand.
+      Show presets folder .......... opens the folder where presets live:
+          Mac:     Documents/Castle Danger Music Company/DREAD/Presets
+          Windows: Documents\Castle Danger Music Company\DREAD\Presets
+      Each preset is one ".dreadpreset" file. Copy them to back up your
+      sounds or share them with another computer.
 
 
 -------------------------------------------------------------------------------

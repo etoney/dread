@@ -155,6 +155,7 @@ DreadProcessor::DreadProcessor()
       apvts (*this, nullptr, "DREAD", createLayout())
 {
     for (int i = 0; i < 16; ++i) gatePtrs[(size_t) i] = apvts.getRawParameterValue ("gate" + juce::String (i));
+    refreshUserPresets();
 }
 
 bool DreadProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -243,29 +244,119 @@ void DreadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiB
 }
 
 //==============================================================================
-int DreadProcessor::getNumPrograms() { return (int) presets().size(); }
+//==============================================================================
+// Programs = factory presets followed by the user's saved presets.
+int DreadProcessor::getNumFactoryPresets() const { return (int) presets().size(); }
+
+juce::File DreadProcessor::getUserPresetFolder()
+{
+    return juce::File::getSpecialLocation (juce::File::userDocumentsDirectory)
+               .getChildFile ("Castle Danger Music Company").getChildFile ("DREAD").getChildFile ("Presets");
+}
+
+juce::File DreadProcessor::fileForPreset (const juce::String& name) const
+{
+    return getUserPresetFolder().getChildFile (juce::File::createLegalFileName (name.trim()) + ".dreadpreset");
+}
+
+void DreadProcessor::refreshUserPresets()
+{
+    juce::StringArray names;
+    for (const auto& f : getUserPresetFolder().findChildFiles (juce::File::findFiles, false, "*.dreadpreset"))
+        names.add (f.getFileNameWithoutExtension());
+    names.sortNatural();
+    const juce::ScopedLock sl (presetLock);
+    userPresets = names;
+}
+
+juce::StringArray DreadProcessor::getUserPresetNames() const { const juce::ScopedLock sl (presetLock); return userPresets; }
+
+bool DreadProcessor::userPresetExists (const juce::String& name) const { return fileForPreset (name).existsAsFile(); }
+
+int DreadProcessor::getNumPrograms()
+{
+    const juce::ScopedLock sl (presetLock);
+    return getNumFactoryPresets() + userPresets.size();
+}
+
 const juce::String DreadProcessor::getProgramName (int index)
 {
-    return juce::isPositiveAndBelow (index, getNumPrograms()) ? presets()[(size_t) index].name : "";
+    const int f = getNumFactoryPresets();
+    if (juce::isPositiveAndBelow (index, f)) return presets()[(size_t) index].name;
+    const juce::ScopedLock sl (presetLock);
+    return userPresets[index - f];
 }
 
 void DreadProcessor::setCurrentProgram (int index)
 {
     if (! juce::isPositiveAndBelow (index, getNumPrograms())) return;
+    const int f = getNumFactoryPresets();
+
+    if (index < f)
+    {
+        currentProgram = index;
+        for (auto* p : getParameters())
+            if (auto* rp = dynamic_cast<juce::RangedAudioParameter*> (p))
+                if (! rp->getParameterID().startsWith ("gate") || rp->getParameterID() == "gateDepth" || rp->getParameterID() == "gateRate")
+                    rp->setValueNotifyingHost (rp->getDefaultValue());
+        for (auto& [id, v] : presets()[(size_t) index].values)
+            if (auto* rp = apvts.getParameter (id))
+                rp->setValueNotifyingHost (rp->convertTo0to1 (v));
+        return;
+    }
+
+    // user preset: read every PARAM from the file and push it to the host-visible parameters
+    const auto file = fileForPreset (getProgramName (index));
+    auto xml = juce::XmlDocument::parse (file);
+    if (xml == nullptr) return;
     currentProgram = index;
+    const auto tree = juce::ValueTree::fromXml (*xml);
     for (auto* p : getParameters())
         if (auto* rp = dynamic_cast<juce::RangedAudioParameter*> (p))
-            if (! rp->getParameterID().startsWith ("gate") || rp->getParameterID() == "gateDepth" || rp->getParameterID() == "gateRate")
-                rp->setValueNotifyingHost (rp->getDefaultValue());
-    for (auto& [id, v] : presets()[(size_t) index].values)
-        if (auto* rp = apvts.getParameter (id))
+        {
+            const auto child = tree.getChildWithProperty ("id", rp->getParameterID());
+            const float v = child.isValid() ? (float) child.getProperty ("value") : rp->convertFrom0to1 (rp->getDefaultValue());
             rp->setValueNotifyingHost (rp->convertTo0to1 (v));
+        }
+}
+
+bool DreadProcessor::saveUserPreset (const juce::String& rawName)
+{
+    const auto name = rawName.trim();
+    if (name.isEmpty()) return false;
+    const auto folder = getUserPresetFolder();
+    if (! folder.createDirectory()) return false;
+    auto state = apvts.copyState();
+    state.setProperty ("presetName", name, nullptr);
+    auto xml = state.createXml();
+    if (xml == nullptr || ! xml->writeTo (fileForPreset (name))) return false;
+    refreshUserPresets();
+    selectProgramByName (fileForPreset (name).getFileNameWithoutExtension());
+    updateHostDisplay (juce::AudioProcessorListener::ChangeDetails().withProgramChanged (true));
+    return true;
+}
+
+bool DreadProcessor::deleteUserPreset (int index)
+{
+    if (! isUserPreset (index)) return false;
+    const bool ok = fileForPreset (getProgramName (index)).deleteFile();
+    refreshUserPresets();
+    if (currentProgram >= getNumPrograms()) currentProgram = 0;
+    updateHostDisplay (juce::AudioProcessorListener::ChangeDetails().withProgramChanged (true));
+    return ok;
+}
+
+void DreadProcessor::selectProgramByName (const juce::String& name)
+{
+    for (int i = getNumPrograms(); --i >= 0;)
+        if (getProgramName (i) == name) { currentProgram = i; return; }
 }
 
 void DreadProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
     state.setProperty ("program", currentProgram, nullptr);
+    state.setProperty ("programName", getProgramName (currentProgram), nullptr);
     if (auto xml = state.createXml()) copyXmlToBinary (*xml, destData);
 }
 
@@ -276,6 +367,8 @@ void DreadProcessor::setStateInformation (const void* data, int sizeInBytes)
         {
             auto vt = juce::ValueTree::fromXml (*xml);
             currentProgram = vt.getProperty ("program", 0);
+            const juce::String name = vt.getProperty ("programName", "");
+            if (name.isNotEmpty()) selectProgramByName (name);   // user presets may have moved in the list
             apvts.replaceState (vt);
         }
 }
