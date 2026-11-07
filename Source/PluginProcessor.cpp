@@ -57,8 +57,26 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
     {
         NormalisableRange<float> r (lo, hi);
         if (skewCentre > 0) r.setSkewForCentre (skewCentre);
+        const String sfx (suffix);
+        auto toText = [sfx] (float v, int) -> String
+        {
+            if (sfx == "Hz") return v >= 1000.0f ? String (v / 1000.0f, 2) + " kHz" : String (juce::roundToInt (v)) + " Hz";
+            if (sfx == "s")  return v < 1.0f ? String (juce::roundToInt (v * 1000.0f)) + " ms" : String (v, 2) + " s";
+            if (sfx == "dB") return String (v, 1) + " dB";
+            return String (juce::roundToInt (v * 100.0f)) + "%";
+        };
+        auto fromText = [sfx] (const String& t) -> float
+        {
+            const float v = t.retainCharacters ("0123456789.-").getFloatValue();
+            if (sfx == "Hz") return t.containsIgnoreCase ("k") ? v * 1000.0f : v;
+            if (sfx == "s")  return t.containsIgnoreCase ("ms") ? v / 1000.0f : v;
+            if (sfx == "dB") return v;
+            return v / 100.0f;
+        };
         ps.push_back (std::make_unique<AudioParameterFloat> (ParameterID { id, 1 }, name, r, def,
-                                                             AudioParameterFloatAttributes().withLabel (suffix)));
+                                                             AudioParameterFloatAttributes().withLabel (suffix)
+                                                                 .withStringFromValueFunction (toText)
+                                                                 .withValueFromStringFunction (fromText)));
     };
 
     add ("droneLevel", "Drone Level", 0, 1, 0.8f);

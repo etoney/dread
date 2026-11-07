@@ -70,7 +70,7 @@ inline void distress (juce::Image& img, float scale, float wear, int seed)
         {
             auto c = bd.getPixelColour (x, y);
             if (c.getAlpha() == 0) continue;
-            const float n = fbm ((float) x / (5.0f * scale), (float) y / (5.0f * scale), seed, 3);
+            const float n = fbm ((float) x / (7.0f * scale), (float) y / (7.0f * scale), seed, 3);
             const float chip = n < wear ? 0.08f : 1.0f;
             const float grain = 0.7f + 0.3f * hash (x, y, seed + 99);
             bd.setPixelColour (x, y, c.withMultipliedAlpha (chip * grain));
@@ -294,6 +294,9 @@ DreadEditor::Knob* DreadEditor::makeKnob (const juce::String& id, const juce::St
     k->big = big;
     k->slider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 70, 15);
     k->slider.setColour (juce::Slider::textBoxTextColourId, pal::paintDim);
+    k->slider.setColour (juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
+    k->slider.setColour (juce::Slider::textBoxBackgroundColourId, juce::Colours::transparentBlack);
+    k->slider.setColour (juce::Slider::textBoxHighlightColourId, pal::rust.withAlpha (0.5f));
     k->label.setText (text.toUpperCase(), juce::dontSendNotification);
     k->label.setJustificationType (juce::Justification::centred);
     k->label.setFont (big ? tex::stencil (19.0f).withExtraKerningFactor (0.08f) : tex::plainBold (11.0f).withExtraKerningFactor (0.06f));
@@ -327,6 +330,7 @@ void DreadEditor::resized()
     badgeArea = juce::Rectangle<int> (0, 0, 380, 52).withCentre ({ getWidth() / 2 + 40, header.getCentreY() });
 
     keyboard.setBounds (r.removeFromBottom (70));
+    keyboard.setKeyWidth ((float) keyboard.getWidth() / 50.0f);
     r.removeFromBottom (10);
 
     const int gap = 10;
@@ -507,8 +511,8 @@ void DreadEditor::buildBackdrop()
         const auto p = s.bounds.toFloat();
         const bool hot = s.title == "MACROS";
         plateFrame (p, hot);
-        auto title = tex::distressedText (s.title, s.bounds.getWidth() - 40, 18, tex::stencil (14.0f), hot ? pal::signal : pal::paint,
-                                          juce::Justification::centredLeft, scale, 0.36f, seed++, 0.12f);
+        auto title = tex::distressedText (s.title, s.bounds.getWidth() - 40, 18, tex::stencil (15.0f), hot ? pal::signalHot : pal::paint,
+                                          juce::Justification::centredLeft, scale, 0.2f, seed++, 0.1f);
         g.drawImage (title, juce::Rectangle<float> (p.getX() + 14, p.getY() + 3, (float) s.bounds.getWidth() - 40, 18.0f));
     }
 
@@ -520,12 +524,14 @@ void DreadEditor::buildBackdrop()
     plateFrame (badge, false);
     g.setColour (pal::paint.withAlpha (0.25f)); g.drawRect (badge.reduced (5.0f), 1.0f);
     auto brand = tex::distressedText ("CASTLE DANGER MC", badgeArea.getWidth() - 30, badgeArea.getHeight() - 8, tex::stencil (34.0f),
-                                      pal::paint, juce::Justification::centred, scale, 0.33f, 4242, 0.14f);
-    g.drawImage (brand, badge.reduced (15.0f, 4.0f));
+                                      juce::Colour (0xffeadfc4), juce::Justification::centred, scale, 0.24f, 4242, 0.14f);
+    g.setColour (juce::Colours::black);
+    g.setOpacity (0.7f); g.drawImage (brand, badge.reduced (15.0f, 4.0f).translated (1.5f, 2.0f));
+    g.setOpacity (1.0f); g.drawImage (brand, badge.reduced (15.0f, 4.0f));
 
     // stamped version / subtitle under the logo
     auto sub = tex::distressedText ("HORROR TEXTURE DESIGNER  //  V" + juce::String (JucePlugin_VersionString),
-                                    300, 14, tex::plainBold (10.0f), pal::paintDim, juce::Justification::centredLeft, scale, 0.3f, 99, 0.1f);
+                                    300, 14, tex::plainBold (10.0f), pal::paintDim, juce::Justification::centredLeft, scale, 0.15f, 99, 0.1f);
     g.drawImage (sub, juce::Rectangle<float> ((float) logoArea.getX() + 4, (float) logoArea.getBottom() - 14, 300.0f, 14.0f));
 
     // logo is drawn live (it flickers) from its own distressed image
