@@ -179,6 +179,8 @@ struct Params
     // Chains + sting type
     float chainLevel = 0.0f, chainRattle = 0.4f, chainRust = 0.5f;
     int stingType = 0;
+    // Twisted Symphony
+    float symphonyLevel = 0.0f, symphonyTwist = 0.5f, symphonySection = 0.3f;
 };
 
 //==============================================================================
@@ -457,6 +459,95 @@ private:
 };
 
 //==============================================================================
+// TWISTED SYMPHONY — a small orchestra section per note: 6 players on the note, 2 an octave below,
+// each with their own vibrato and slowly wandering intonation. TWIST spreads the tuning, makes the
+// players slide away from each other, adds a minor-2nd and tritone cluster, and lets the whole section
+// sag flat the longer a note is held. SECTION blends bowed strings (body resonances + rosin) to brass.
+class SymphonyLayer
+{
+public:
+    void prepare (float sampleRate, uint32_t seed) { sr = sampleRate; rng = Rng (seed); }
+
+    void start (float freq, float vel)
+    {
+        base = freq; t = 0; brassEnv = 0; velocity = vel;
+        for (int i = 0; i < kPlayers; ++i)
+        {
+            auto& pl = players[(size_t) i];
+            pl.osc.phase = rng.uni();
+            pl.vibRate = 4.6f + rng.uni() * 1.8f; pl.vibPh = rng.uni();
+            pl.detune = rng.bi(); pl.pan = 0.15f + 0.7f * ((float) (i % 6) / 5.0f);
+            pl.drift.setRate (0.07f + rng.uni() * 0.25f, sr);
+            pl.inc = freq / sr;
+        }
+        for (auto& f : body) f.reset();
+        brassL.reset(); brassR.reset();
+    }
+
+    // called every 16 samples
+    void control (float twist, float section, int blockLen)
+    {
+        const float dt = (float) blockLen / sr;
+        const float sag = -twist * 2.2f * std::min (1.0f, t / 7.0f);                 // semitones
+        for (int i = 0; i < kPlayers; ++i)
+        {
+            auto& pl = players[(size_t) i];
+            pl.vibPh += pl.vibRate * dt; if (pl.vibPh >= 1.0f) pl.vibPh -= 1.0f;
+            const float d = pl.drift.tick (rng);
+            for (int k = 1; k < blockLen; ++k) pl.drift.tick (rng);                  // advance drift at audio rate
+            const float cents = pl.detune * (4.0f + twist * 50.0f)
+                              + d * twist * 130.0f
+                              + std::sin (kTwoPi * pl.vibPh) * (11.0f + twist * 28.0f)
+                              + sag * 100.0f * (0.6f + 0.4f * std::abs (pl.detune));
+            float mul = 1.0f;
+            if (i >= 6 && i < 8) mul = 0.5f;                                      // low section
+            if (i == 8) mul = 1.0595f;                                           // minor 2nd
+            if (i == 9) mul = 1.4142f;                                           // tritone
+            pl.inc = std::min (0.45f, base * mul * centsToRatio (cents) / sr);
+        }
+        clusterGain = twist * twist * 0.55f;
+        // strings body resonances
+        body[0].set (290.0f, 2.0f, sr); body[1].set (720.0f, 2.2f, sr);
+        body[2].set (2600.0f, 1.6f, sr); body[3].set (3500.0f, 2.5f, sr);
+        // brass: brightness swells in with the note
+        brassEnv += (1.0f - brassEnv) * std::min (1.0f, dt * 7.0f);
+        const float bc = std::min (sr * 0.4f, base * (1.5f + 9.0f * brassEnv * (0.5f + 0.5f * velocity)));
+        brassL.set (bc, 0.9f, sr); brassR.set (bc, 0.9f, sr);
+        rosin.set (4500.0f, 0.7f, sr);
+        mixSection = section;
+        t += dt;
+    }
+
+    void tick (float& l, float& r)
+    {
+        float sl = 0, sr_ = 0;
+        for (int i = 0; i < kPlayers; ++i)
+        {
+            auto& pl = players[(size_t) i];
+            float v = pl.osc.tick (pl.inc);
+            if (i >= 8) v *= clusterGain;
+            else if (i >= 6) v *= 0.8f;
+            sl += v * (1.0f - pl.pan); sr_ += v * pl.pan;
+        }
+        // strings: body resonances + a little rosin noise
+        const float nz = rosin.hp (rng.bi()) * 0.08f;
+        const float mono = (sl + sr_) * 0.5f;
+        const float bodyRes = body[0].bp (mono) * 0.5f + body[1].bp (mono) * 0.45f + body[2].bp (mono) * 0.3f + body[3].bp (mono) * 0.2f;
+        const float strL = sl * 0.35f + bodyRes + nz, strR = sr_ * 0.35f + bodyRes + nz;
+        // brass: closed-then-opening lowpass with a bit of blat
+        const float brL = std::tanh (brassL.lp (sl) * 1.6f), brR = std::tanh (brassR.lp (sr_) * 1.6f);
+        l = (strL * (1.0f - mixSection) + brL * mixSection * 0.9f) * 0.32f;
+        r = (strR * (1.0f - mixSection) + brR * mixSection * 0.9f) * 0.32f;
+    }
+
+private:
+    static constexpr int kPlayers = 10;
+    struct Player { Saw osc; Drift drift; float inc = 0.01f, vibRate = 5, vibPh = 0, detune = 0, pan = 0.5f; };
+    float sr = 48000, base = 220, t = 0, brassEnv = 0, velocity = 1, clusterGain = 0, mixSection = 0;
+    Rng rng; std::array<Player, kPlayers> players; std::array<SVF, 4> body; SVF brassL, brassR, rosin;
+};
+
+//==============================================================================
 // RUSTY CHAINS — a stochastic stream of link-on-link impacts (with little cascades, like a chain
 // settling) into three banks of inharmonic metal resonators, plus rusty stick-slip grinding and creaks.
 class ChainLayer
@@ -577,6 +668,7 @@ public:
         for (auto& o : osc) o.phase = rng.uni();
         piano.prepare (sr); whisper.prepare (sr, seed ^ 0x51ED27u); scream.prepare (sr, seed ^ 0xBADC0DEu);
         chains.prepare (sr, seed ^ 0xC4A1u);
+        symphony.prepare (sr, seed ^ 0x5F0Du);
     }
 
     void start (int n, float velocity, const Params& p)
@@ -590,6 +682,7 @@ public:
         whisper.start (baseFreq);
         scream.start (baseFreq);
         chains.start (baseFreq, velocity);
+        symphony.start (baseFreq, velocity);
     }
     void stop() { amp.off(); fenv.off(); }
     void kill() { amp.st = ADSR::Idle; amp.v = 0; }
@@ -626,6 +719,7 @@ public:
             if (p.whisperLevel > 0.0001f) whisper.control (p.airMotion, p.whisperDemon);
             if (p.screamLevel > 0.0001f)  scream.control (p.screamRasp);
             if (p.chainLevel > 0.0001f)   chains.control (p.chainRattle, p.chainRust);
+            if (p.symphonyLevel > 0.0001f) symphony.control (p.symphonyTwist, p.symphonySection, m);
 
             for (int j = 0; j < m; ++j)
             {
@@ -672,6 +766,7 @@ public:
                 if (p.whisperLevel > 0.0001f) { whisper.tick (p.airMotion, p.whisperDemon, el, er);       xl += el * p.whisperLevel; xr += er * p.whisperLevel; }
                 if (p.screamLevel > 0.0001f)  { scream.tick (p.screamRasp, el, er);                       xl += el * p.screamLevel;  xr += er * p.screamLevel; }
                 if (p.chainLevel > 0.0001f)   { chains.tick (p.chainRattle, p.chainRust, el, er);         xl += el * p.chainLevel;   xr += er * p.chainLevel; }
+                if (p.symphonyLevel > 0.0001f) { symphony.tick (el, er);                                  xl += el * p.symphonyLevel; xr += er * p.symphonyLevel; }
 
                 xl = filtL.lp (xl); xr = filtR.lp (xr);
                 const float g = a * (0.35f + 0.65f * vel) * 0.5f;
@@ -687,7 +782,7 @@ private:
     DelayLine combA, combB; OnePole combDampA, combDampB;
     SVF filtL, filtR, formA, formB;
     ADSR amp, fenv;
-    PianoLayer piano; WhisperLayer whisper; ScreamLayer scream; ChainLayer chains;
+    PianoLayer piano; WhisperLayer whisper; ScreamLayer scream; ChainLayer chains; SymphonyLayer symphony;
 };
 
 //==============================================================================

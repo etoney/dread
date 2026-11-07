@@ -288,6 +288,7 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     sec ("SCREAMS",        { makeKnob ("screamLevel", "Level"), makeKnob ("screamRasp", "Rasp") });
     sec ("DISTORTION",     { makeKnob ("distDrive", "Drive"), makeKnob ("distTone", "Tone"), makeKnob ("distMix", "Mix") });
     sec ("RUSTY CHAINS",   { makeKnob ("chainLevel", "Level"), makeKnob ("chainRattle", "Rattle"), makeKnob ("chainRust", "Rust") });
+    sec ("TWISTED SYMPHONY", { makeKnob ("symphonyLevel", "Level"), makeKnob ("symphonyTwist", "Twist"), makeKnob ("symphonySection", "Section") });
 
     proc.refreshUserPresets();
     rebuildPresetMenu();
@@ -515,11 +516,11 @@ void DreadEditor::resized()
         return out;
     };
     // section indices: 0 drone, 1 metal, 2 air, 3 macros, 4 filter, 5 fx, 6 gate, 7 sting,
-    //                  8 piano, 9 whispers, 10 screams, 11 distortion, 12 chains
+    //                  8 piano, 9 whispers, 10 screams, 11 distortion, 12 chains, 13 symphony
 
     // SOUND SOURCES
-    auto a = splitRow (rowSrcA, { 4, 3, 2 });
-    layoutSection (sections[0], a[0]); layoutSection (sections[1], a[1]); layoutSection (sections[8], a[2]);
+    auto a = splitRow (rowSrcA, { 4, 3, 2, 3 });
+    layoutSection (sections[0], a[0]); layoutSection (sections[1], a[1]); layoutSection (sections[8], a[2]); layoutSection (sections[13], a[3]);
     auto b = splitRow (rowSrcB, { 2, 2, 2, 3 });
     layoutSection (sections[2], b[0]); layoutSection (sections[9], b[1]); layoutSection (sections[10], b[2]); layoutSection (sections[12], b[3]);
 

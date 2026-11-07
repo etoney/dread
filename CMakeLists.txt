@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(DREAD VERSION 1.5.1)
+project(DREAD VERSION 1.6.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -52,6 +52,8 @@ target_link_libraries(DREAD
 add_executable(dread_render test/render_demo.cpp)
 add_executable(dread_render_new test/render_new_sounds.cpp)
 add_executable(dread_render_chains test/render_chains_stings.cpp)
+add_executable(dread_render_symphony test/render_symphony.cpp)
+target_include_directories(dread_render_symphony PRIVATE Source)
 target_include_directories(dread_render_chains PRIVATE Source)
 target_include_directories(dread_render_new PRIVATE Source)
 target_include_directories(dread_render PRIVATE Source)

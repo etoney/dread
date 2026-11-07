@@ -51,6 +51,14 @@ const std::vector<Preset>& presets()
                        { "chainLevel", 0.8f }, { "chainRattle", 0.25f }, { "chainRust", 0.8f }, { "whisperLevel", 0.35f },
                        { "whisperDemon", 0.7f }, { "dread", 0.55f }, { "cutoff", 5000.0f }, { "reverbMix", 0.6f },
                        { "reverbSize", 0.95f }, { "release", 4.0f } } },
+        { "Twisted Symphony", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "symphonyLevel", 1.0f },
+                                { "symphonyTwist", 0.55f }, { "symphonySection", 0.25f }, { "dread", 0.35f }, { "attack", 0.6f },
+                                { "sustain", 1.0f }, { "release", 2.5f }, { "cutoff", 9000.0f }, { "envAmount", 0.0f },
+                                { "wobble", 0.25f }, { "reverbMix", 0.55f }, { "reverbSize", 0.85f }, { "delayMix", 0.08f } } },
+        { "Funeral Brass", { { "droneLevel", 0.2f }, { "droneSub", 0.6f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f },
+                             { "symphonyLevel", 1.0f }, { "symphonyTwist", 0.4f }, { "symphonySection", 0.85f }, { "dread", 0.3f },
+                             { "torment", 0.25f }, { "attack", 0.25f }, { "sustain", 1.0f }, { "release", 2.0f },
+                             { "cutoff", 7000.0f }, { "envAmount", 0.0f }, { "reverbMix", 0.5f }, { "reverbSize", 0.9f } } },
     };
     return p;
 }
@@ -104,6 +112,9 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
     add ("screamLevel", "Scream Level", 0, 1, 0);
     add ("screamRasp", "Scream Rasp", 0, 1, 0.4f);
 
+    add ("symphonyLevel", "Symphony Level", 0, 1, 0);
+    add ("symphonyTwist", "Symphony Twist", 0, 1, 0.5f);
+    add ("symphonySection", "Symphony Section", 0, 1, 0.3f);
     add ("chainLevel", "Chains Level", 0, 1, 0);
     add ("chainRattle", "Chains Rattle", 0, 1, 0.4f);
     add ("chainRust", "Chains Rust", 0, 1, 0.5f);
@@ -188,6 +199,7 @@ void DreadProcessor::pullParams()
     p.distDrive = get ("distDrive"); p.distTone = get ("distTone"); p.distMix = get ("distMix"); p.distType = (int) get ("distType");
     p.delayMix = get ("delayMix"); p.delayFeedback = get ("delayFeedback"); p.delayTime = (int) get ("delayTime");
     p.reverbMix = get ("reverbMix"); p.reverbSize = get ("reverbSize");
+    p.symphonyLevel = get ("symphonyLevel"); p.symphonyTwist = get ("symphonyTwist"); p.symphonySection = get ("symphonySection");
     p.chainLevel = get ("chainLevel"); p.chainRattle = get ("chainRattle"); p.chainRust = get ("chainRust");
     p.stingType = (int) get ("stingType");
     p.stingLevel = get ("stingLevel"); p.stingZone = get ("stingZone") > 0.5f;
