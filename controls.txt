@@ -28,7 +28,7 @@ HEADER
 
 
 -------------------------------------------------------------------------------
-ROW 1: ORIGINAL SOUND SOURCES + MACROS
+ROW 1: SOUND SOURCES
 -------------------------------------------------------------------------------
 DRONE: the low, dark synth bed
   LEVEL ....... Volume of the drone.
@@ -43,23 +43,6 @@ METAL: bowed metal (a bow dragged across a cymbal or rusty rail)
                 Low = short and scraped.
   TONE ........ Low = dark and dull. High = bright and shrill.
 
-AIR: breathy noise shaped like faint vowels
-  LEVEL ....... Volume of the air.
-  MOTION ...... How fast the vowel shapes drift. ALSO sets how fast the
-                Demon Whispers "talk".
-
-MACROS: one knob changes many things at once
-  DREAD ....... The "make it worse" knob. Turning it up makes the pitch drift
-                more seasick, darkens the filter, and adds ring-mod clang, sub
-                rumble, extra whisper, tape warble and a bigger reverb.
-                (The logo flickers more, too.)
-  TORMENT ..... Adds low-end weight, then crushes everything with heavy
-                saturation. Good for aggressive hits.
-
-
--------------------------------------------------------------------------------
-ROW 2: NEWER SOURCES + DISTORTION
--------------------------------------------------------------------------------
 BROKEN PIANO
   LEVEL ....... Volume of the piano.
   BREAK ....... How wrecked the piano is.
@@ -69,6 +52,14 @@ BROKEN PIANO
                       and some dead keys that just thud.
   TIP: Use a short ATTACK (under 10 ms) so it sounds struck. A long attack
        turns it into a creepy reversed-piano swell.
+
+-------------------------------------------------------------------------------
+ROW 2: SOUND SOURCES
+-------------------------------------------------------------------------------
+AIR: breathy noise shaped like faint vowels
+  LEVEL ....... Volume of the air.
+  MOTION ...... How fast the vowel shapes drift. ALSO sets how fast the
+                Demon Whispers "talk".
 
 DEMON WHISPERS
   LEVEL ....... Volume of the whispers.
@@ -91,21 +82,8 @@ RUSTY CHAINS
                 with grinding friction and creaks.
   TIP: Lower notes = heavier chain. Higher notes = smaller, lighter links.
 
-DISTORTION
-  TYPE MENU ... Tube ........... warm, slightly uneven clipping
-                Tape ........... soft, squashed saturation
-                Fuzz ........... hard clipping plus an octave-up buzz
-                Wavefold ....... metallic and alien
-                Bitcrush ....... lo-fi grit down to "broken toy"
-                Blown Speaker .. torn speaker cone that crackles and cuts out
-  DRIVE ....... How much distortion. 0 = off. Level-matched, so turning it up
-                adds grit without a big volume jump.
-  TONE ........ Darkens the distorted sound to tame harshness.
-  MIX ......... Blend of clean and distorted sound.
-
-
 -------------------------------------------------------------------------------
-ROW 3: SHAPING + EFFECTS
+ROW 3: SHAPING (filter, distortion, macros)
 -------------------------------------------------------------------------------
 FILTER / AMP
   CUTOFF ...... Brightness. Turn down for muffled, "from another room" sounds.
@@ -116,6 +94,20 @@ FILTER / AMP
   SUSTAIN ..... The level held while you keep the key down.
   RELEASE ..... How long the note rings after you let go.
 
+DISTORTION
+
+MACROS: one knob changes many things at once
+  DREAD ....... The "make it worse" knob. Turning it up makes the pitch drift
+                more seasick, darkens the filter, and adds ring-mod clang, sub
+                rumble, extra whisper, tape warble and a bigger reverb.
+                (The logo flickers more, too.)
+  TORMENT ..... Adds low-end weight, then crushes everything with heavy
+                saturation. Good for aggressive hits.
+
+
+-------------------------------------------------------------------------------
+ROW 4: EFFECTS + STING
+-------------------------------------------------------------------------------
 FX  (in signal order: Ring > Torment > Distortion > Gate > Wobble > Delay > Reverb)
   RING ........ Amount of ring modulation (clangy, robotic).
   RING HZ ..... Ring-mod speed. ~20-60 Hz = throbbing wobble.
@@ -128,15 +120,6 @@ FX  (in signal order: Ring > Torment > Distortion > Gate > Wobble > Delay > Reve
   REVERB ...... Amount of room sound.
   SIZE ........ Room size. High = huge, cavernous tails (up to ~13 seconds).
 
-
--------------------------------------------------------------------------------
-ROW 4: GATE + STING
--------------------------------------------------------------------------------
-GATE: a rhythmic chopper synced to your song's tempo
-  16 STEPS .... Lit = sound passes. Dark = sound is cut. Click to toggle.
-  RATE MENU ... Step length: 1/8, 1/16, 1/32, 1/16T (triplets).
-  DEPTH ....... How hard dark steps cut. 0 = gate off. 100% = full stutter.
-  TIP: Depth + Torment = heartbeat pulse.
 
 STING: jumpscares
   STING ZONE C6+ .. When ticked, any note C6 or higher fires a one-shot
@@ -151,6 +134,15 @@ STING: jumpscares
                     hit at full force, but they still get Delay and Reverb.
   LEVEL ........... Volume of the stings.
   OUTPUT .......... Master volume for the whole plugin.
+
+-------------------------------------------------------------------------------
+ROW 5: GATE + KEYBOARD
+-------------------------------------------------------------------------------
+GATE: a rhythmic chopper synced to your song's tempo
+  16 STEPS .... Lit = sound passes. Dark = sound is cut. Click to toggle.
+  RATE MENU ... Step length: 1/8, 1/16, 1/32, 1/16T (triplets).
+  DEPTH ....... How hard dark steps cut. 0 = gate off. 100% = full stutter.
+  TIP: Depth + Torment = heartbeat pulse.
 
 KEYBOARD
   Click to play notes without a MIDI controller.
