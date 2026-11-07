@@ -248,6 +248,7 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     sec ("DEMON WHISPERS", { makeKnob ("whisperLevel", "Level"), makeKnob ("whisperDemon", "Demon") });
     sec ("SCREAMS",        { makeKnob ("screamLevel", "Level"), makeKnob ("screamRasp", "Rasp") });
     sec ("DISTORTION",     { makeKnob ("distDrive", "Drive"), makeKnob ("distTone", "Tone"), makeKnob ("distMix", "Mix") });
+    sec ("RUSTY CHAINS",   { makeKnob ("chainLevel", "Level"), makeKnob ("chainRattle", "Rattle"), makeKnob ("chainRust", "Rust") });
 
     for (int i = 0; i < proc.getNumPrograms(); ++i) presetBox.addItem (proc.getProgramName (i), i + 1);
     presetBox.setSelectedId (proc.getCurrentProgram() + 1, juce::dontSendNotification);
@@ -257,7 +258,9 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     gateRateBox.addItemList ({ "1/8", "1/16", "1/32", "1/16T" }, 1);
     delayTimeBox.addItemList ({ "1/4", "1/8.", "1/8", "1/16" }, 1);
     distTypeBox.addItemList ({ "Tube", "Tape", "Fuzz", "Wavefold", "Bitcrush", "Blown Speaker" }, 1);
-    addAndMakeVisible (gateRateBox); addAndMakeVisible (delayTimeBox); addAndMakeVisible (distTypeBox);
+    stingTypeBox.addItemList ({ "Slam", "Shriek Stabs", "Sub Boom", "Metal Crash" }, 1);
+    addAndMakeVisible (gateRateBox); addAndMakeVisible (delayTimeBox); addAndMakeVisible (distTypeBox); addAndMakeVisible (stingTypeBox);
+    stingTypeAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "stingType", stingTypeBox);
     gateRateAtt  = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "gateRate", gateRateBox);
     delayTimeAtt = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "delayTime", delayTimeBox);
     distTypeAtt  = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment> (proc.apvts, "distType", distTypeBox);
@@ -327,7 +330,7 @@ void DreadEditor::resized()
     auto header = r.removeFromTop (64);
     logoArea  = header.withWidth (300);
     presetBox.setBounds (header.removeFromRight (240).withSizeKeepingCentre (240, 28));
-    badgeArea = juce::Rectangle<int> (0, 0, 380, 52).withCentre ({ getWidth() / 2 + 40, header.getCentreY() });
+    badgeArea = juce::Rectangle<int> (0, 0, 440, 52).withCentre ({ getWidth() / 2 + 20, header.getCentreY() });
 
     keyboard.setBounds (r.removeFromBottom (70));
     keyboard.setKeyWidth ((float) keyboard.getWidth() / 50.0f);
@@ -354,11 +357,11 @@ void DreadEditor::resized()
 
     auto a = splitRow (row1, { 4, 3, 2, 3 });
     for (int i = 0; i < 4; ++i) layoutSection (sections[(size_t) i], a[(size_t) i]);
-    auto src = splitRow (rowSrc, { 2, 2, 2, 3 });
-    for (int i = 0; i < 4; ++i) layoutSection (sections[(size_t) (8 + i)], src[(size_t) i]);
+    auto src = splitRow (rowSrc, { 2, 2, 2, 3, 3 });
+    for (int i = 0; i < 5; ++i) layoutSection (sections[(size_t) (8 + i)], src[(size_t) i]);
     auto b = splitRow (row2, { 1, 1 });
     layoutSection (sections[4], b[0]); layoutSection (sections[5], b[1]);
-    auto c = splitRow (row3, { 7, 2 });
+    auto c = splitRow (row3, { 6.4f, 2.6f });
 
     // Gate: depth knob + rate + 16 steps
     auto gate = c[0];
@@ -390,7 +393,9 @@ void DreadEditor::resized()
     auto fx = sections[5].bounds;
     delayTimeBox.setBounds (fx.getRight() - 86, fx.getY() + 6, 74, 20);
     auto ds = sections[11].bounds;
-    distTypeBox.setBounds (ds.getRight() - 132, ds.getY() + 6, 120, 20);
+    distTypeBox.setBounds (ds.getRight() - 112, ds.getY() + 6, 100, 20);
+    auto sts = sections[7].bounds;
+    stingTypeBox.setBounds (sts.getRight() - 122, sts.getY() + 6, 110, 20);
 
     buildBackdrop();
 }
@@ -523,7 +528,7 @@ void DreadEditor::buildBackdrop()
     // CASTLE DANGER MC badge
     plateFrame (badge, false);
     g.setColour (pal::paint.withAlpha (0.25f)); g.drawRect (badge.reduced (5.0f), 1.0f);
-    auto brand = tex::distressedText ("CASTLE DANGER MC", badgeArea.getWidth() - 30, badgeArea.getHeight() - 8, tex::stencil (34.0f),
+    auto brand = tex::distressedText ("CASTLE DANGER MUSIC COMPANY", badgeArea.getWidth() - 30, badgeArea.getHeight() - 8, tex::stencil (27.0f),
                                       juce::Colour (0xffeadfc4), juce::Justification::centred, scale, 0.24f, 4242, 0.14f);
     g.setColour (juce::Colours::black);
     g.setOpacity (0.7f); g.drawImage (brand, badge.reduced (15.0f, 4.0f).translated (1.5f, 2.0f));

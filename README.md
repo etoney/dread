@@ -11,7 +11,8 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 | **Broken Piano** | Modal piano with stretched partials on detuned string pairs. *Break* knocks keys out of tune (the same key is always wrong the same way), kills some keys and partials, and adds string rattle |
 | **Demon Whispers** | Two whisperers speaking random syllables with sibilants. *Demon* lowers the vocal tract and adds a period-doubled growl. Syllable speed follows Air *Motion* |
 | **Screams** | Voice-like source that swoops up into each note, with growing wild vibrato, jitter, breath and open-vowel formants. *Rasp* adds roughness, subharmonics and drive |
-| **Sting zone** | Notes **C6 and up** fire one-shot jumpscares (noise slam + dive-bomb sweep + inharmonic bell partials). Toggle with *Sting zone* |
+| **Rusty Chains** | Link-on-link impacts in little cascades through three banks of metal resonators, plus rusty grinding and creaks. *Rattle* = slow clinks → frantic shaking; *Rust* = duller links + more grinding |
+| **Sting zone** | Notes **C6 and up** fire one-shot jumpscares. *Sting Type*: Slam, Shriek Stabs, Sub Boom, Metal Crash. Stings skip Torment/Distortion/Gate so they hit at full force |
 
 **Macros**
 - **DREAD**: one knob that raises pitch drift, darkens the filter, adds ring mod, sub, whisper, wobble and reverb size together.
@@ -19,7 +20,7 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 
 **FX chain:** Ring mod → Torment → Distortion (Tube, Tape, Fuzz, Wavefold, Bitcrush, Blown Speaker, with Drive / Tone / Mix) → 16-step tempo-synced Gate → Wobble (tape warble) → Ping-pong delay → 8-line FDN reverb (up to ~13 s tails) → Output.
 
-12 factory presets: Unease, Basement Hum, Bowed Morgue, Whispers Behind You, Heartbeat Gate, Asylum Pulse, Total Dread, Shock Stabs, Broken Piano, Demonic Whispers, Screams, Haunted Parlor.
+14 factory presets: Unease (Default), Basement Hum, Bowed Morgue, Whispers Behind You, Heartbeat Gate, Asylum Pulse, Total Dread, Shock Stabs, Broken Piano, Demonic Whispers, Screams, Haunted Parlor, Rusty Chains, Dungeon.
 
 ## Building
 Requirements: CMake 3.22+, Git, and a C++17 compiler (Xcode on macOS, Visual Studio 2022 on Windows). JUCE is downloaded automatically.

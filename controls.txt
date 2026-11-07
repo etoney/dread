@@ -1,6 +1,6 @@
 ===============================================================================
   DREAD  //  CONTROLS QUICK REFERENCE
-  Castle Danger MC
+  Castle Danger Music Company
 ===============================================================================
 
 Controls are listed top to bottom, left to right, the same way they're laid
@@ -18,9 +18,13 @@ HEADER
       Loads one of the 12 factory sounds. Each preset resets every knob to its
       default first, then applies its own settings.
 
-      Init: Unease       Basement Hum       Bowed Morgue      Whispers Behind You
+      Unease (Default)   Basement Hum       Bowed Morgue      Whispers Behind You
       Heartbeat Gate     Asylum Pulse       Total Dread       Shock Stabs
       Broken Piano       Demonic Whispers   Screams           Haunted Parlor
+      Rusty Chains       Dungeon
+
+      "Unease (Default)" is the starting-point sound: every knob at its
+      default setting. Start here to build your own sound from scratch.
 
 
 -------------------------------------------------------------------------------
@@ -79,6 +83,14 @@ SCREAMS
   you hold it. Play several notes for a crowd. Best in the middle and upper
   range of the keyboard.
 
+RUSTY CHAINS
+  LEVEL ....... Volume of the chains.
+  RATTLE ...... How much the chains move. Low = a few slow clinks, like a
+                chain being dragged. High = frantic shaking.
+  RUST ........ Low = bright, ringing links. High = dull, crusty links
+                with grinding friction and creaks.
+  TIP: Lower notes = heavier chain. Higher notes = smaller, lighter links.
+
 DISTORTION
   TYPE MENU ... Tube ........... warm, slightly uneven clipping
                 Tape ........... soft, squashed saturation
@@ -128,8 +140,15 @@ GATE: a rhythmic chopper synced to your song's tempo
 
 STING: jumpscares
   STING ZONE C6+ .. When ticked, any note C6 or higher fires a one-shot
-                    jumpscare (noise slam + pitch dive-bomb + metallic clang)
-                    instead of a normal note.
+                    jumpscare instead of a normal note. Different keys in
+                    the zone give different pitches of the same hit.
+  TYPE MENU ....... Slam ......... impact click + sub boom + dissonant
+                                   orchestra-style cluster
+                    Shriek Stabs . repeated screeching violin stabs
+                    Sub Boom ..... deep trailer-style drop with a rumble tail
+                    Metal Crash .. huge crash of metal
+                    Stings skip Torment, Distortion and the Gate so they always
+                    hit at full force, but they still get Delay and Reverb.
   LEVEL ........... Volume of the stings.
   OUTPUT .......... Master volume for the whole plugin.
 
@@ -147,6 +166,9 @@ QUICK RECIPES
                           DISTORTION to Fuzz.
   Possessed choir ....... "Screams" preset, hold 3-4 high notes, RASP up,
                           DISTORTION to Blown Speaker.
-  Jumpscares ............ Any preset. Play C6 and up.
+  Chained in the dungeon . "Dungeon" preset. Hold low notes, raise RATTLE
+                          when something is coming.
+  Jumpscares ............ Any preset. Play C6 and up. Pick the hit with the
+                          STING type menu.
 
 ===============================================================================

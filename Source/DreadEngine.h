@@ -17,6 +17,14 @@ inline float clampf (float v, float lo, float hi) { return std::min (hi, std::ma
 inline float mtof (float note) { return 440.0f * std::pow (2.0f, (note - 69.0f) / 12.0f); }
 inline float centsToRatio (float c) { return std::pow (2.0f, c / 1200.0f); }
 inline float dbToGain (float db) { return std::pow (10.0f, db / 20.0f); }
+// transparent below ~0.7, then curves smoothly to a ceiling of 0.98
+inline float softLimit (float x)
+{
+    const float a = std::abs (x);
+    if (a <= 0.7f) return x;
+    const float y = 0.7f + 0.28f * std::tanh ((a - 0.7f) / 0.28f);
+    return x < 0 ? -y : y;
+}
 
 //==============================================================================
 struct Rng
@@ -168,6 +176,9 @@ struct Params
     float screamLevel = 0.0f, screamRasp = 0.4f;
     // Distortion
     float distDrive = 0.0f, distTone = 0.7f, distMix = 1.0f; int distType = 0;
+    // Chains + sting type
+    float chainLevel = 0.0f, chainRattle = 0.4f, chainRust = 0.5f;
+    int stingType = 0;
 };
 
 //==============================================================================
@@ -446,6 +457,112 @@ private:
 };
 
 //==============================================================================
+// RUSTY CHAINS — a stochastic stream of link-on-link impacts (with little cascades, like a chain
+// settling) into three banks of inharmonic metal resonators, plus rusty stick-slip grinding and creaks.
+class ChainLayer
+{
+public:
+    void prepare (float sampleRate, uint32_t seed) { sr = sampleRate; rng = Rng (seed); }
+
+    void start (float freq, float vel)
+    {
+        const float size = std::pow (freq / 261.6f, 0.35f);   // lower notes = heavier chain
+        static constexpr float ratios[kModes] = { 1.0f, 1.47f, 2.09f, 2.56f, 3.21f };
+        static constexpr float bankBase[kBanks] = { 1650.0f, 2450.0f, 420.0f };
+        for (int b = 0; b < kBanks; ++b)
+            for (int m = 0; m < kModes; ++m)
+            {
+                auto& md = banks[b][m];
+                md.f = bankBase[b] * size * ratios[m] * (0.93f + 0.14f * rng.uni());
+                md.f = std::min (md.f, sr * 0.45f);
+                md.y1 = md.y2 = 0;
+            }
+        intensity = 0.5f + 0.5f * vel;
+        countdown = 1; follow = 0; lastRust = -1.0f;
+        groan.setRate (0.35f, sr); creakDrift.setRate (0.6f, sr);
+    }
+
+    void control (float rattle, float rust)
+    {
+        rate = 5.0f + std::pow (rattle, 1.4f) * 70.0f;
+        if (std::abs (rust - lastRust) > 0.002f)
+        {
+            lastRust = rust;
+            for (int b = 0; b < kBanks; ++b)
+                for (int m = 0; m < kModes; ++m)
+                {
+                    auto& md = banks[b][m];
+                    const float T = (b == 2 ? 0.45f : 0.22f) / (1.0f + 0.5f * (float) m) * (1.0f - rust * 0.65f);
+                    const float rr = std::exp (-6.9f / (std::max (0.01f, T) * sr));
+                    md.c = 2.0f * rr * std::cos (kTwoPi * md.f / sr); md.r2 = rr * rr; md.g = (1.0f - rr) * 6.0f;
+                }
+        }
+        clickHp.set (1500.0f, 0.7f, sr);
+        grind.set (1900.0f + rust * 900.0f, 1.6f, sr);
+        creak.set (650.0f + creakDrift.from * 250.0f, 22.0f, sr);
+    }
+
+    void tick (float rattle, float rust, float& l, float& r)
+    {
+        // schedule impacts (Poisson) and short follow-up cascades
+        if (--countdown <= 0)
+        {
+            hit (0.3f + 0.7f * rng.uni(), rng.uni() < 0.18f ? 2 : (rng.uni() < 0.5f ? 0 : 1));
+            follow = (int) (rng.uni() * (1.0f + rattle * 4.0f));
+            followTimer = (int) ((0.004f + rng.uni() * 0.025f) * sr);
+            countdown = (int) (-std::log (std::max (1e-4f, rng.uni())) / rate * sr) + 1;
+        }
+        if (follow > 0 && --followTimer <= 0)
+        {
+            hit (amp * (0.35f + 0.4f * rng.uni()), rng.uni() < 0.7f ? bank : (int) (rng.uni() * 2.99f));
+            --follow; followTimer = (int) ((0.004f + rng.uni() * 0.03f) * sr);
+        }
+
+        // excitation click
+        float x = 0;
+        if (clickLeft > 0) { x = clickHp.hp (rng.bi()) * amp * ((float) clickLeft / (float) clickLen); --clickLeft; }
+
+        float out[kBanks] {};
+        for (int b = 0; b < kBanks; ++b)
+        {
+            const float in = (b == bank) ? x : 0.0f;
+            for (int m = 0; m < kModes; ++m)
+            {
+                auto& md = banks[b][m];
+                const float y = md.c * md.y1 - md.r2 * md.y2 + in * md.g;
+                md.y2 = md.y1; md.y1 = y; out[b] += y;
+            }
+        }
+
+        // rust: stick-slip grinding crackle + occasional creak
+        const float slow = 0.5f + 0.5f * groan.tick (rng);
+        float crackle = 0;
+        if (rng.uni() < (150.0f + rattle * 1500.0f) * slow / sr) crackle = rng.bi() * (0.5f + rng.uni());
+        float rustOut = grind.bp (crackle) * 1.2f;
+        const float cd = creakDrift.tick (rng);
+        rustOut += creak.bp (rng.bi()) * std::max (0.0f, cd - 0.35f) * 2.5f;
+        rustOut *= rust * slow;
+
+        const float metal = out[0] + out[1] + out[2] * 1.3f;
+        const float lw = 1.0f - pan, rw = pan;
+        l = (metal * lw + rustOut * 0.8f) * intensity * 16.0f;
+        r = (metal * rw + rustOut * 0.8f) * intensity * 16.0f;
+    }
+
+private:
+    static constexpr int kBanks = 3, kModes = 5;
+    struct Mode { float f = 1000, c = 0, r2 = 0, g = 0, y1 = 0, y2 = 0; };
+    void hit (float a, int b)
+    {
+        amp = a; bank = b; pan = 0.1f + 0.8f * rng.uni();
+        clickLen = clickLeft = 8 + (int) (rng.uni() * 40.0f);
+    }
+    float sr = 48000, rate = 10, intensity = 1, amp = 0, pan = 0.5f, lastRust = -1;
+    int countdown = 1, follow = 0, followTimer = 0, bank = 0, clickLeft = 0, clickLen = 1;
+    Rng rng; Mode banks[kBanks][kModes]; SVF clickHp, grind, creak; Drift groan, creakDrift;
+};
+
+//==============================================================================
 // Sustained voice: Drone (detuned saws + sub + folder), Metal (bowed combs), Air (drifting whisper formants)
 class Voice
 {
@@ -459,6 +576,7 @@ public:
         combA.init ((int) (sr / 15.0f) + 8); combB.init ((int) (sr / 15.0f) + 8);
         for (auto& o : osc) o.phase = rng.uni();
         piano.prepare (sr); whisper.prepare (sr, seed ^ 0x51ED27u); scream.prepare (sr, seed ^ 0xBADC0DEu);
+        chains.prepare (sr, seed ^ 0xC4A1u);
     }
 
     void start (int n, float velocity, const Params& p)
@@ -471,6 +589,7 @@ public:
         piano.start (n, baseFreq, velocity, p.pianoBreak);
         whisper.start (baseFreq);
         scream.start (baseFreq);
+        chains.start (baseFreq, velocity);
     }
     void stop() { amp.off(); fenv.off(); }
     void kill() { amp.st = ADSR::Idle; amp.v = 0; }
@@ -506,6 +625,7 @@ public:
             formA.set (f1, 7.0f, sr); formB.set (f2, 9.0f, sr);
             if (p.whisperLevel > 0.0001f) whisper.control (p.airMotion, p.whisperDemon);
             if (p.screamLevel > 0.0001f)  scream.control (p.screamRasp);
+            if (p.chainLevel > 0.0001f)   chains.control (p.chainRattle, p.chainRust);
 
             for (int j = 0; j < m; ++j)
             {
@@ -551,6 +671,7 @@ public:
                 if (p.pianoLevel > 0.0001f)   { piano.tick (rng, el, er);                                 xl += el * p.pianoLevel;   xr += er * p.pianoLevel; }
                 if (p.whisperLevel > 0.0001f) { whisper.tick (p.airMotion, p.whisperDemon, el, er);       xl += el * p.whisperLevel; xr += er * p.whisperLevel; }
                 if (p.screamLevel > 0.0001f)  { scream.tick (p.screamRasp, el, er);                       xl += el * p.screamLevel;  xr += er * p.screamLevel; }
+                if (p.chainLevel > 0.0001f)   { chains.tick (p.chainRattle, p.chainRust, el, er);         xl += el * p.chainLevel;   xr += er * p.chainLevel; }
 
                 xl = filtL.lp (xl); xr = filtR.lp (xr);
                 const float g = a * (0.35f + 0.65f * vel) * 0.5f;
@@ -566,57 +687,146 @@ private:
     DelayLine combA, combB; OnePole combDampA, combDampB;
     SVF filtL, filtR, formA, formB;
     ADSR amp, fenv;
-    PianoLayer piano; WhisperLayer whisper; ScreamLayer scream;
+    PianoLayer piano; WhisperLayer whisper; ScreamLayer scream; ChainLayer chains;
 };
 
 //==============================================================================
-// One-shot sting / jumpscare: noise slam + dive-bomb sweep + inharmonic metal partials
+// One-shot sting / jumpscare. Types: 0 Slam, 1 Shriek Stabs, 2 Sub Boom, 3 Metal Crash
 class Sting
 {
 public:
     bool active = false;
     void prepare (float sampleRate, uint32_t seed) { sr = sampleRate; rng = Rng (seed); }
-    void trigger (int note, float velocity)
+
+    void trigger (int note, float velocity, int stingType)
     {
-        active = true; t = 0; vel = velocity;
-        base = mtof ((float) note - 36.0f);
-        sweepPhase = 0; for (auto& ph : partPhase) ph = rng.uni();
-        hp.reset(); bpf.reset();
-        hp.set (900.0f, 0.7f, sr); bpf.set (base * 4.0f, 3.0f, sr);
+        active = true; t = 0; vel = velocity; type = std::clamp (stingType, 0, 3);
+        pitch = mtof ((float) note - 24.0f);          // C6 -> C4 region
+        subPhase = 0;
+        for (auto& o : saws) o.phase = rng.uni();
+        for (auto& ph : partPhase) ph = rng.uni();
+        for (int k = 0; k < kParts; ++k)
+        {
+            partRatio[k] = 1.0f + (float) k * (0.9f + rng.uni() * 1.3f) + rng.uni() * 0.4f;
+            partDecay[k] = 0.25f + rng.uni() * (k < 4 ? 2.8f : 1.2f);
+            partPan[k]   = rng.uni();
+        }
+        for (auto& f : filt) f.reset();
+        hp.reset(); lp.reset(); rumble.reset();
+        hp.set (300.0f, 0.7f, sr); rumble.set (90.0f, 0.8f, sr);
     }
+
     void render (float* L, float* R, int n, float level)
     {
-        static constexpr float ratios[6] = { 1.0f, 2.32f, 4.25f, 6.63f, 9.38f, 12.4f };
-        static constexpr float decays[6] = { 2.2f, 1.6f, 1.1f, 0.8f, 0.55f, 0.4f };
+        const float g = level * (0.45f + 0.55f * vel);
         for (int i = 0; i < n && active; ++i)
         {
             const float tt = t / sr;
-            // noise slam
-            const float nEnv = std::exp (-tt * 14.0f);
-            const float nz = hp.hp (rng.bi()) * nEnv * 0.9f + bpf.bp (rng.bi()) * std::exp (-tt * 5.0f) * 1.5f;
-            // dive-bomb sweep 2500Hz -> 35Hz
-            const float sf = 35.0f + 2465.0f * std::exp (-tt * 9.0f);
-            sweepPhase += sf / sr; if (sweepPhase >= 1.0f) sweepPhase -= 1.0f;
-            const float sw = std::tanh (std::sin (kTwoPi * sweepPhase) * 3.0f) * std::exp (-tt * 2.5f) * 0.7f;
-            // metal partials
-            float pl = 0, pr = 0;
-            for (int k = 0; k < 6; ++k)
+            float l = 0, r = 0;
+            switch (type)
             {
-                partPhase[k] += base * ratios[k] / sr; if (partPhase[k] >= 1.0f) partPhase[k] -= 1.0f;
-                const float v = std::sin (kTwoPi * partPhase[k]) * std::exp (-tt / decays[k] * 2.0f) / (1.0f + (float) k * 0.6f);
-                if (k & 1) pr += v; else pl += v;
+                case 0: renderSlam (tt, l, r); break;
+                case 1: renderShriek (tt, l, r); break;
+                case 2: renderBoom (tt, l, r); break;
+                default: renderCrash (tt, l, r); break;
             }
-            const float g = level * (0.4f + 0.6f * vel) * 1.0f;
-            L[i] += (nz + sw + pl * 0.8f + pr * 0.3f) * g;
-            R[i] += (nz * 0.95f + sw + pr * 0.8f + pl * 0.3f) * g;
+            L[i] += std::tanh (l * 2.2f) * g * 1.05f;
+            R[i] += std::tanh (r * 2.2f) * g * 1.05f;
             t += 1.0f;
-            if (tt > 4.0f) active = false;
+            if (tt > 4.5f) active = false;
         }
     }
+
 private:
-    float sr = 48000, t = 0, vel = 1, base = 220, sweepPhase = 0;
-    std::array<float, 6> partPhase {};
-    Rng rng; SVF hp, bpf;
+    static constexpr int kParts = 10;
+
+    float sine (float& ph, float f) { ph += f / sr; if (ph >= 1.0f) ph -= 1.0f; return std::sin (kTwoPi * ph); }
+
+    // big orchestral-style hit: click + sub boom + dissonant brass/string cluster + metal ring
+    void renderSlam (float tt, float& l, float& r)
+    {
+        const float click = hp.hp (rng.bi()) * std::exp (-tt * 70.0f) * 1.4f;
+        const float boom = std::tanh (sine (subPhase, 32.0f + 120.0f * std::exp (-tt * 7.0f)) * 2.5f) * std::exp (-tt * 2.4f) * 1.1f;
+        static constexpr float cl[5] = { 1.0f, 1.0595f, 1.4142f, 1.4983f, 2.1189f };
+        const float sag = std::pow (2.0f, -0.8f * std::min (1.0f, tt) / 12.0f);
+        float cs = 0, cr = 0;
+        for (int k = 0; k < 5; ++k)
+        {
+            const float v = saws[(size_t) k].tick (pitch * cl[k] * sag / sr);
+            if (k & 1) cr += v; else cs += v;
+        }
+        const float bright = 600.0f + 7000.0f * std::exp (-tt * 3.5f);
+        if (((int) t & 15) == 0) { filt[0].set (bright, 1.2f, sr); filt[1].set (bright, 1.2f, sr); }
+        const float clEnv = (1.0f - std::exp (-tt * 300.0f)) * std::exp (-tt * 1.8f) * 0.55f;
+        cs = filt[0].lp (cs) * clEnv; cr = filt[1].lp (cr) * clEnv;
+        float pl, pr; partials (tt, 0.35f, pl, pr);
+        l = click + boom + cs + cr * 0.4f + pl;
+        r = click + boom + cr + cs * 0.4f + pr;
+    }
+
+    // "shower scene" style: repeated, dissonant high violin screeches
+    void renderShriek (float tt, float& l, float& r)
+    {
+        static constexpr float cl[4] = { 2.0f, 2.119f, 2.828f, 2.997f };
+        const float stabLen = 0.14f;
+        const int stab = (int) (tt / stabLen);
+        const float ts = tt - (float) stab * stabLen;
+        const float env = stab < 7 ? (1.0f - std::exp (-ts * 600.0f)) * std::exp (-ts * 10.0f) * (1.0f - (float) stab * 0.07f) : 0.0f;
+        const float tail = std::exp (-std::max (0.0f, tt - 0.98f) * 3.0f) * (tt > 0.98f ? 0.25f : 0.0f);
+        const float vib = 1.0f + 0.012f * std::sin (kTwoPi * 7.0f * tt) + 0.004f * rng.bi();
+        float a = 0, b = 0;
+        for (int k = 0; k < 4; ++k)
+        {
+            const float v = saws[(size_t) k].tick (pitch * cl[k] * vib / sr);
+            if (k & 1) b += v; else a += v;
+        }
+        if (((int) t & 15) == 0) { filt[0].set (3200.0f, 1.8f, sr); filt[1].set (2600.0f, 1.8f, sr); }
+        const float bow = hp.hp (rng.bi()) * 0.25f;
+        const float e = env + tail;
+        l = (filt[0].bp (a + bow) * 1.4f + a * 0.25f) * e;
+        r = (filt[1].bp (b + bow) * 1.4f + b * 0.25f) * e;
+    }
+
+    // trailer-style sub drop with air sweep and rumble tail
+    void renderBoom (float tt, float& l, float& r)
+    {
+        const float f = 28.0f + 140.0f * std::exp (-tt * 4.0f);
+        const float boom = std::tanh (sine (subPhase, f) * 3.0f) * std::exp (-tt * 1.3f) * 1.3f;
+        const float click = hp.hp (rng.bi()) * std::exp (-tt * 90.0f) * 1.2f;
+        if (((int) t & 15) == 0) lp.set (150.0f + 7000.0f * std::exp (-tt * 5.0f), 0.9f, sr);
+        const float air = lp.lp (rng.bi()) * std::exp (-tt * 1.6f) * 0.7f;
+        const float rum = rumble.lp (rng.bi()) * std::exp (-tt * 0.8f) * 1.8f;
+        l = boom + click + air + rum;
+        r = boom + click + air * 0.9f + rum;
+    }
+
+    // big metallic crash: dense inharmonic partials + noise burst
+    void renderCrash (float tt, float& l, float& r)
+    {
+        const float burst = hp.hp (rng.bi()) * (std::exp (-tt * 25.0f) * 1.2f + std::exp (-tt * 2.0f) * 0.25f);
+        float pl, pr; partials (tt, 1.0f, pl, pr);
+        const float thud = sine (subPhase, 55.0f + 60.0f * std::exp (-tt * 12.0f)) * std::exp (-tt * 6.0f) * 0.7f;
+        l = burst + pl * 1.5f + thud;
+        r = burst * 0.95f + pr * 1.5f + thud;
+    }
+
+    void partials (float tt, float amt, float& l, float& r)
+    {
+        l = r = 0;
+        for (int k = 0; k < kParts; ++k)
+        {
+            const float f = pitch * 0.5f * partRatio[k];
+            if (f > sr * 0.45f) continue;
+            const float v = sine (partPhase[k], f) * std::exp (-tt / partDecay[k] * 2.0f) / (1.0f + (float) k * 0.35f) * amt * 0.5f;
+            l += v * (1.0f - partPan[k]); r += v * partPan[k];
+        }
+    }
+
+    float sr = 48000, t = 0, vel = 1, pitch = 220, subPhase = 0;
+    int type = 0;
+    std::array<Saw, 5> saws;
+    std::array<float, kParts> partPhase {}, partRatio {}, partDecay {}, partPan {};
+    Rng rng; SVF hp, lp, rumble; std::array<SVF, 2> filt;
 };
 
 //==============================================================================
@@ -705,7 +915,7 @@ public:
         if (params.stingZone && note >= kStingNote)
         {
             auto& s = stings[(size_t) (nextSting++ % kStings)];
-            s.trigger (note, velocity);
+            s.trigger (note, velocity, params.stingType);
             return;
         }
         Voice* target = nullptr;
@@ -745,7 +955,10 @@ public:
         reverb.setSize (clampf (p.reverbSize + d * 0.2f, 0.0f, 1.0f));
 
         for (auto& v : voices) if (v.active()) v.render (L, R, n, p, driftCents, driftRate, cutoffMul, subAmt, airAmt);
-        for (auto& s : stings) if (s.active) s.render (L, R, n, p.stingLevel);
+        // stings render to their own bus: they skip ring/torment/distortion/gate so the hit stays huge
+        if ((int) tmpL.size() < n) { tmpL.resize ((size_t) n); tmpR.resize ((size_t) n); }
+        std::fill (tmpL.begin(), tmpL.begin() + n, 0.0f); std::fill (tmpR.begin(), tmpR.begin() + n, 0.0f);
+        for (auto& s : stings) if (s.active) s.render (tmpL.data(), tmpR.data(), n, p.stingLevel);
 
         // timing
         bpm = (bpm > 20.0 && bpm < 400.0) ? bpm : 120.0;
@@ -805,6 +1018,9 @@ public:
                 r = r * (1.0f - w) + wobR.read (dr) * w;
             }
 
+            // stings join here (post gate/wobble) so they still get delay + reverb
+            l += tmpL[(size_t) i]; r += tmpR[(size_t) i];
+
             // Ping-pong delay
             const float tl = delayL.read (dSamples), tr = delayR.read (dSamples);
             delayL.push (std::tanh (delayDamp[0].lp ((l + r) * 0.5f + tr * p.delayFeedback)));
@@ -819,7 +1035,7 @@ public:
             // DC block + output + safety clip
             l -= dcL.lp (l); r -= dcR.lp (r);
             l *= outGain; r *= outGain;
-            L[i] = clampf (l, -1.5f, 1.5f); R[i] = clampf (r, -1.5f, 1.5f);
+            L[i] = softLimit (l); R[i] = softLimit (r);
         }
         freeBeat = beat;
     }

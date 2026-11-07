@@ -46,8 +46,8 @@ private:
     std::vector<std::unique_ptr<Knob>> knobs;
     std::vector<Section> sections;
 
-    juce::ComboBox presetBox, gateRateBox, delayTimeBox, distTypeBox;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> gateRateAtt, delayTimeAtt, distTypeAtt;
+    juce::ComboBox presetBox, gateRateBox, delayTimeBox, distTypeBox, stingTypeBox;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> gateRateAtt, delayTimeAtt, distTypeAtt, stingTypeAtt;
     std::array<juce::ToggleButton, 16> steps;
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment>, 16> stepAtts;
     juce::ToggleButton stingZone { "Sting zone C6+" };

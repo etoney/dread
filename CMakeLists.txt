@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(DREAD VERSION 1.3.0)
+project(DREAD VERSION 1.4.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -51,6 +51,8 @@ target_link_libraries(DREAD
 # Offline DSP test (no JUCE): renders test/demo.wav
 add_executable(dread_render test/render_demo.cpp)
 add_executable(dread_render_new test/render_new_sounds.cpp)
+add_executable(dread_render_chains test/render_chains_stings.cpp)
+target_include_directories(dread_render_chains PRIVATE Source)
 target_include_directories(dread_render_new PRIVATE Source)
 target_include_directories(dread_render PRIVATE Source)
 

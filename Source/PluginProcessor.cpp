@@ -12,7 +12,7 @@ struct Preset { const char* name; std::vector<std::pair<const char*, float>> val
 const std::vector<Preset>& presets()
 {
     static const std::vector<Preset> p {
-        { "Init: Unease", {} },
+        { "Unease (Default)", {} },
         { "Basement Hum", { { "dread", 0.25f }, { "droneDetune", 0.15f }, { "droneSub", 0.7f }, { "metalLevel", 0.1f },
                             { "airLevel", 0.1f }, { "cutoff", 700.0f }, { "reverbMix", 0.25f }, { "torment", 0.3f } } },
         { "Bowed Morgue", { { "dread", 0.5f }, { "droneLevel", 0.2f }, { "metalLevel", 1.0f }, { "metalResonance", 0.92f },
@@ -43,6 +43,14 @@ const std::vector<Preset>& presets()
                               { "pianoBreak", 0.5f }, { "whisperLevel", 0.5f }, { "whisperDemon", 0.5f }, { "dread", 0.4f },
                               { "attack", 0.002f }, { "sustain", 1.0f }, { "release", 2.0f }, { "cutoff", 8000.0f },
                               { "envAmount", 0.0f }, { "wobble", 0.35f }, { "reverbMix", 0.5f } } },
+        { "Rusty Chains", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "chainLevel", 1.0f },
+                            { "chainRattle", 0.45f }, { "chainRust", 0.6f }, { "dread", 0.2f }, { "attack", 0.05f },
+                            { "sustain", 1.0f }, { "release", 1.5f }, { "cutoff", 14000.0f }, { "envAmount", 0.0f },
+                            { "reverbMix", 0.45f }, { "reverbSize", 0.65f }, { "delayMix", 0.08f } } },
+        { "Dungeon", { { "droneLevel", 0.35f }, { "droneSub", 0.6f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f },
+                       { "chainLevel", 0.8f }, { "chainRattle", 0.25f }, { "chainRust", 0.8f }, { "whisperLevel", 0.35f },
+                       { "whisperDemon", 0.7f }, { "dread", 0.55f }, { "cutoff", 5000.0f }, { "reverbMix", 0.6f },
+                       { "reverbSize", 0.95f }, { "release", 4.0f } } },
     };
     return p;
 }
@@ -96,6 +104,10 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
     add ("screamLevel", "Scream Level", 0, 1, 0);
     add ("screamRasp", "Scream Rasp", 0, 1, 0.4f);
 
+    add ("chainLevel", "Chains Level", 0, 1, 0);
+    add ("chainRattle", "Chains Rattle", 0, 1, 0.4f);
+    add ("chainRust", "Chains Rust", 0, 1, 0.5f);
+
     add ("cutoff", "Cutoff", 40, 16000, 2500, 1200, "Hz");
     add ("resonance", "Resonance", 0, 1, 0.25f);
     add ("envAmount", "Filter Env", 0, 1, 0.3f);
@@ -129,6 +141,8 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
     add ("reverbMix", "Reverb Mix", 0, 1, 0.35f);
     add ("reverbSize", "Reverb Size", 0, 1, 0.7f);
     add ("stingLevel", "Sting Level", 0, 1, 0.8f);
+    ps.push_back (std::make_unique<AudioParameterChoice> (ParameterID { "stingType", 1 }, "Sting Type",
+                                                         StringArray { "Slam", "Shriek Stabs", "Sub Boom", "Metal Crash" }, 0));
     ps.push_back (std::make_unique<AudioParameterBool> (ParameterID { "stingZone", 1 }, "Sting Zone (C6+)", true));
     add ("outputDb", "Output", -36, 6, -6, -1, "dB");
 
@@ -173,6 +187,8 @@ void DreadProcessor::pullParams()
     p.distDrive = get ("distDrive"); p.distTone = get ("distTone"); p.distMix = get ("distMix"); p.distType = (int) get ("distType");
     p.delayMix = get ("delayMix"); p.delayFeedback = get ("delayFeedback"); p.delayTime = (int) get ("delayTime");
     p.reverbMix = get ("reverbMix"); p.reverbSize = get ("reverbSize");
+    p.chainLevel = get ("chainLevel"); p.chainRattle = get ("chainRattle"); p.chainRust = get ("chainRust");
+    p.stingType = (int) get ("stingType");
     p.stingLevel = get ("stingLevel"); p.stingZone = get ("stingZone") > 0.5f;
     p.outputDb = get ("outputDb");
 }
