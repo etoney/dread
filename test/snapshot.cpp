@@ -25,6 +25,14 @@ int main (int argc, char** argv)
         std::unique_ptr<juce::AudioProcessorEditor> ed (proc.createEditor());
         check (writePng (ed->createComponentSnapshot (ed->getLocalBounds(), true, 2.0f), dir.getChildFile ("gui.png")), "main snapshot");
 
+        // ---- opens on Init (Clean) with every effect off
+        check (proc.getProgramName (proc.getCurrentProgram()) == "Init (Clean)", "opens on Init (Clean)");
+        {
+            bool off = true;
+            for (auto id : { "dread", "torment", "ringMix", "wobble", "gateDepth", "distDrive", "delayMix", "reverbMix" })
+                off = off && proc.apvts.getRawParameterValue (id)->load() < 0.0001f;
+            check (off, "Init (Clean): all effects off");
+        }
         // ---- preset folder location (matches Possessed)
         const auto folder = DreadProcessor::getUserPresetFolder().getFullPathName();
         std::printf ("preset folder: %s\n", folder.toRawUTF8());

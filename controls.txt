@@ -15,18 +15,24 @@ Tip: double-click a value readout under a knob to type an exact number
 HEADER
 -------------------------------------------------------------------------------
   PRESET MENU (top right)
-      Loads one of the 17 factory sounds, or one of your own saved presets
+      Loads one of the 21 factory sounds, or one of your own saved presets
       (listed under USER PRESETS). Each preset resets every knob to its
       default first, then applies its own settings.
 
-      Unease (Default)   Basement Hum       Bowed Morgue      Whispers Behind You
-      Heartbeat Gate     Asylum Pulse       Total Dread       Shock Stabs
-      Broken Piano       Demonic Whispers   Screams           Haunted Parlor
-      Rusty Chains       Dungeon            Twisted Symphony  Funeral Brass
-      Satanic Strings
+      Init (Clean)       Unease             Basement Hum      Bowed Morgue
+      Whispers Behind You Heartbeat Gate    Asylum Pulse      Total Dread
+      Shock Stabs        Broken Piano       Demonic Whispers  Screams
+      Haunted Parlor     Rusty Chains       Dungeon           Twisted Symphony
+      Funeral Brass      Satanic Strings    Demented Organ    Heartbeat
+      Panic Attack
 
-      "Unease (Default)" is the starting-point sound: every knob at its
-      default setting. Start here to build your own sound from scratch.
+      "Init (Clean)" is the blank starting point: one plain drone and every
+      effect turned off (no DREAD, Torment, ring mod, distortion, gate,
+      wobble, delay or reverb). DREAD opens on it, just like Possessed.
+
+      Same key = same sound: anything "random" in DREAD (chain rattles,
+      whisper syllables, scream cracks, jumpscare hits, piano tuning, etc.)
+      is fixed per key, so a track plays back the same way every time.
 
   SAVE BUTTON (next to the preset menu)
       Saves every current setting as a new preset. Type a name and press
@@ -58,19 +64,14 @@ DRONE: the low, dark synth bed
   FOLD ........ Wavefolding. Adds harsh, buzzy overtones.
   SUB ......... Adds a pure tone one octave below, for rumble.
 
-METAL: bowed metal (a bow dragged across a cymbal or rusty rail)
-  LEVEL ....... Volume of the metal.
-  BOW ......... How long the metal rings. High = sings and sustains.
-                Low = short and scraped.
-  TONE ........ Low = dark and dull. High = bright and shrill.
-
-BROKEN PIANO
+BROKEN PIANO: a modelled acoustic piano (felt hammers, 2-3 strings per key,
+              soundboard) that's falling apart
   LEVEL ....... Volume of the piano.
-  BREAK ....... How wrecked the piano is.
-                0   = clean, slightly detuned piano.
-                Up  = keys pulled out of tune (the same key is always wrong
-                      the same way), rattling strings, missing overtones,
-                      and some dead keys that just thud.
+  BREAK ....... 0  = an in-tune piano with natural string beating.
+                Up = keys pulled out of tune (the same key is always wrong
+                     the same way), honky-tonk string beating, missing
+                     strings, dull rusty strings, clangy stiffness, buzzing
+                     and rattling, and dead keys that just clunk.
   TIP: Use a short ATTACK (under 10 ms) so it sounds struck. A long attack
        turns it into a creepy reversed-piano swell.
 
@@ -84,12 +85,29 @@ TWISTED SYMPHONY: an orchestra that's gone wrong
   TIP: Slow ATTACK (0.3-1 s) makes the bows swell in. Hold chords: the
        longer they ring, the more the orchestra falls apart.
 
+DEMENTED PIPE ORGAN
+  LEVEL ....... Volume of the organ.
+  DEMENT ...... 0  = an in-tune church organ.
+                Up = every rank of pipes out of tune with the others, a
+                     seasick tremulant, wind-starved wobble, the pitch
+                     sagging as you hold the chord, and a "ciphering" wrong
+                     pipe moaning a semitone off.
+  STOPS ....... Pulls out more ranks of pipes: low = a soft flute,
+                middle = principal pipes and a 16' bass, high = full organ
+                with mixtures and growling reeds.
+
 -------------------------------------------------------------------------------
 ROW 2: SOUND SOURCES
 -------------------------------------------------------------------------------
-AIR: breathy noise shaped like faint vowels
-  LEVEL ....... Volume of the air.
-  MOTION ...... How fast the vowel shapes drift. ALSO sets how fast the
+METAL: bowed metal (a bow dragged across a cymbal or rusty rail)
+  LEVEL ....... Volume of the metal.
+  BOW ......... How long the metal rings. High = sings and sustains.
+                Low = short and scraped.
+  TONE ........ Low = dark and dull. High = bright and shrill.
+
+AIR: wind
+  LEVEL ....... Volume of the wind.
+  MOTION ...... How fast the gusts rise and fall. ALSO sets how fast the
                 Demon Whispers "talk".
 
 DEMON WHISPERS
@@ -98,20 +116,28 @@ DEMON WHISPERS
                 Up = deeper throats plus a guttural growl underneath.
   (Talking speed comes from AIR > MOTION.)
 
-SCREAMS
+SCREAMS: blood-curdling screams
   LEVEL ....... Volume of the screams.
-  RASP ........ Turns a clean wail into a shredded, gravelly throat.
-  Each note swoops up into the scream, and the vibrato gets wilder the longer
-  you hold it. Play several notes for a crowd. Best in the middle and upper
-  range of the keyboard.
+  RASP ........ Roughness: vocal fry, more voice cracks, and a shredded,
+                distorted throat.
+  Each note swoops violently up into the scream (an octave above the key),
+  strains higher, shakes with a wide vibrato and cracks as the voice breaks.
+  Play several notes for a crowd.
 
 RUSTY CHAINS
   LEVEL ....... Volume of the chains.
   RATTLE ...... How much the chains move. Low = a few slow clinks, like a
                 chain being dragged. High = frantic shaking.
   RUST ........ Low = bright, ringing links. High = dull, crusty links
-                with grinding friction and creaks.
+                with gritty scraping inside each clink.
   TIP: Lower notes = heavier chain. Higher notes = smaller, lighter links.
+
+HEARTBEAT
+  LEVEL ....... Volume of the heartbeat.
+  RATE ........ Beats per minute (30-200). Lower keys = a deeper, bigger
+                heart.
+  PANIC ....... The heart speeds up the longer you hold the key, beats
+                harder, goes irregular, and skips or doubles beats.
 
 -------------------------------------------------------------------------------
 ROW 3: SHAPING (filter, distortion, macros)

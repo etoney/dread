@@ -12,7 +12,12 @@ struct Preset { const char* name; std::vector<std::pair<const char*, float>> val
 const std::vector<Preset>& presets()
 {
     static const std::vector<Preset> p {
-        { "Unease (Default)", {} },
+        { "Init (Clean)", { { "droneLevel", 0.8f }, { "droneDetune", 0.2f }, { "droneFold", 0.0f }, { "droneSub", 0.3f },
+                            { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "dread", 0.0f }, { "torment", 0.0f },
+                            { "ringMix", 0.0f }, { "wobble", 0.0f }, { "gateDepth", 0.0f }, { "distDrive", 0.0f },
+                            { "delayMix", 0.0f }, { "reverbMix", 0.0f }, { "cutoff", 16000.0f }, { "resonance", 0.0f },
+                            { "envAmount", 0.0f }, { "attack", 0.05f }, { "decay", 1.0f }, { "sustain", 1.0f }, { "release", 0.5f } } },
+        { "Unease", {} },
         { "Basement Hum", { { "dread", 0.25f }, { "droneDetune", 0.15f }, { "droneSub", 0.7f }, { "metalLevel", 0.1f },
                             { "airLevel", 0.1f }, { "cutoff", 700.0f }, { "reverbMix", 0.25f }, { "torment", 0.3f } } },
         { "Bowed Morgue", { { "dread", 0.5f }, { "droneLevel", 0.2f }, { "metalLevel", 1.0f }, { "metalResonance", 0.92f },
@@ -66,6 +71,18 @@ const std::vector<Preset>& presets()
                                { "ringMix", 0.12f }, { "ringFreq", 33.0f }, { "attack", 0.45f }, { "sustain", 1.0f },
                                { "release", 3.5f }, { "cutoff", 6500.0f }, { "envAmount", 0.0f }, { "wobble", 0.3f },
                                { "reverbMix", 0.6f }, { "reverbSize", 1.0f }, { "delayMix", 0.1f } } },
+        { "Demented Organ", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "organLevel", 1.0f },
+                              { "organDement", 0.6f }, { "organStops", 0.75f }, { "dread", 0.25f }, { "attack", 0.03f },
+                              { "sustain", 1.0f }, { "release", 1.6f }, { "cutoff", 12000.0f }, { "envAmount", 0.0f },
+                              { "wobble", 0.15f }, { "reverbMix", 0.6f }, { "reverbSize", 1.0f } } },
+        { "Heartbeat", { { "droneLevel", 0.25f }, { "droneSub", 0.4f }, { "droneDetune", 0.3f }, { "metalLevel", 0.0f },
+                         { "airLevel", 0.0f }, { "heartLevel", 1.0f }, { "heartRate", 62.0f }, { "heartPanic", 0.1f },
+                         { "dread", 0.25f }, { "attack", 0.01f }, { "sustain", 1.0f }, { "release", 1.0f },
+                         { "cutoff", 3000.0f }, { "envAmount", 0.0f }, { "reverbMix", 0.2f }, { "reverbSize", 0.5f } } },
+        { "Panic Attack", { { "droneLevel", 0.3f }, { "droneSub", 0.5f }, { "metalLevel", 0.2f }, { "airLevel", 0.3f },
+                            { "heartLevel", 1.0f }, { "heartRate", 88.0f }, { "heartPanic", 0.85f }, { "dread", 0.6f },
+                            { "torment", 0.25f }, { "attack", 0.01f }, { "sustain", 1.0f }, { "release", 1.5f },
+                            { "cutoff", 4000.0f }, { "envAmount", 0.0f }, { "wobble", 0.35f }, { "reverbMix", 0.35f } } },
     };
     return p;
 }
@@ -86,6 +103,7 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
             if (sfx == "Hz") return v >= 1000.0f ? String (v / 1000.0f, 2) + " kHz" : String (juce::roundToInt (v)) + " Hz";
             if (sfx == "s")  return v < 1.0f ? String (juce::roundToInt (v * 1000.0f)) + " ms" : String (v, 2) + " s";
             if (sfx == "dB") return String (v, 1) + " dB";
+            if (sfx == "BPM") return String (juce::roundToInt (v)) + " BPM";
             return String (juce::roundToInt (v * 100.0f)) + "%";
         };
         auto fromText = [sfx] (const String& t) -> float
@@ -93,7 +111,7 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
             const float v = t.retainCharacters ("0123456789.-").getFloatValue();
             if (sfx == "Hz") return t.containsIgnoreCase ("k") ? v * 1000.0f : v;
             if (sfx == "s")  return t.containsIgnoreCase ("ms") ? v / 1000.0f : v;
-            if (sfx == "dB") return v;
+            if (sfx == "dB" || sfx == "BPM") return v;
             return v / 100.0f;
         };
         ps.push_back (std::make_unique<AudioParameterFloat> (ParameterID { id, 1 }, name, r, def,
@@ -122,6 +140,12 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
     add ("symphonyLevel", "Symphony Level", 0, 1, 0);
     add ("symphonyTwist", "Symphony Twist", 0, 1, 0.5f);
     add ("symphonySection", "Symphony Section", 0, 1, 0.3f);
+    add ("organLevel", "Organ Level", 0, 1, 0);
+    add ("organDement", "Organ Dement", 0, 1, 0.5f);
+    add ("organStops", "Organ Stops", 0, 1, 0.5f);
+    add ("heartLevel", "Heartbeat Level", 0, 1, 0);
+    add ("heartRate", "Heartbeat Rate", 30, 200, 70, 80, "BPM");
+    add ("heartPanic", "Heartbeat Panic", 0, 1, 0.2f);
     add ("chainLevel", "Chains Level", 0, 1, 0);
     add ("chainRattle", "Chains Rattle", 0, 1, 0.4f);
     add ("chainRust", "Chains Rust", 0, 1, 0.5f);
@@ -174,6 +198,7 @@ DreadProcessor::DreadProcessor()
 {
     for (int i = 0; i < 16; ++i) gatePtrs[(size_t) i] = apvts.getRawParameterValue ("gate" + juce::String (i));
     refreshUserPresets();
+    setCurrentProgram (0);   // new instances open on "Init (Clean)": one plain sound, every effect off
 }
 
 bool DreadProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -207,6 +232,8 @@ void DreadProcessor::pullParams()
     p.delayMix = get ("delayMix"); p.delayFeedback = get ("delayFeedback"); p.delayTime = (int) get ("delayTime");
     p.reverbMix = get ("reverbMix"); p.reverbSize = get ("reverbSize");
     p.symphonyLevel = get ("symphonyLevel"); p.symphonyTwist = get ("symphonyTwist"); p.symphonySection = get ("symphonySection");
+    p.organLevel = get ("organLevel"); p.organDement = get ("organDement"); p.organStops = get ("organStops");
+    p.heartLevel = get ("heartLevel"); p.heartRate = get ("heartRate"); p.heartPanic = get ("heartPanic");
     p.chainLevel = get ("chainLevel"); p.chainRattle = get ("chainRattle"); p.chainRust = get ("chainRust");
     p.stingType = (int) get ("stingType");
     p.stingLevel = get ("stingLevel"); p.stingZone = get ("stingZone") > 0.5f;

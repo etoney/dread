@@ -8,10 +8,12 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 | **Drone** | 5 detuned band-limited saws with independent random pitch drift, a wavefolder (Fold) and a sub sine |
 | **Metal** | Noise-bowed comb resonator pair at an inharmonic ratio (2.756×): bowed cymbals, scraped rails |
 | **Air** | Noise through two drifting formant filters: breathy, whisper-like movement |
-| **Broken Piano** | Modal piano with stretched partials on detuned string pairs. *Break* knocks keys out of tune (the same key is always wrong the same way), kills some keys and partials, and adds string rattle |
+| **Broken Piano** | Physical-model piano with stretched partials on detuned string pairs. *Break* knocks keys out of tune (the same key is always wrong the same way), kills some keys and partials, and adds string rattle |
 | **Demon Whispers** | Two whisperers speaking random syllables with sibilants. *Demon* lowers the vocal tract and adds a period-doubled growl. Syllable speed follows Air *Motion* |
 | **Screams** | Voice-like source that swoops up into each note, with growing wild vibrato, jitter, breath and open-vowel formants. *Rasp* adds roughness, subharmonics and drive |
 | **Twisted Symphony** | A small orchestra section per note (players + low octave), each with its own vibrato and wandering intonation. *Twist* = players drift/slide apart, sour cluster notes creep in, and the section sags flat as notes are held; *Section* = strings → brass |
+| **Demented Pipe Organ** | Additive pipe ranks (16' to mixtures and reeds). *Stops* = soft flute → full organ; *Dement* = ranks out of tune with each other, tremulant, wind-starved wobble, sagging pitch, a ciphering wrong pipe |
+| **Heartbeat** | Lub-dub heartbeat while a key is held. *Rate* in BPM; *Panic* speeds it up over time, makes it irregular and pounding |
 | **Rusty Chains** | Link-on-link impacts in little cascades through three banks of metal resonators, plus rusty grinding and creaks. *Rattle* = slow clinks → frantic shaking; *Rust* = duller links + more grinding |
 | **Sting zone** | Notes **C6 and up** fire one-shot jumpscares. *Sting Type*: Slam, Shriek Stabs, Sub Boom, Metal Crash. Stings skip Torment/Distortion/Gate so they hit at full force |
 
@@ -21,7 +23,7 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 
 **FX chain:** Ring mod → Torment → Distortion (Tube, Tape, Fuzz, Wavefold, Bitcrush, Blown Speaker, with Drive / Tone / Mix) → 16-step tempo-synced Gate → Wobble (tape warble) → Ping-pong delay → 8-line FDN reverb (up to ~13 s tails) → Output.
 
-17 factory presets: Unease (Default), Basement Hum, Bowed Morgue, Whispers Behind You, Heartbeat Gate, Asylum Pulse, Total Dread, Shock Stabs, Broken Piano, Demonic Whispers, Screams, Haunted Parlor, Rusty Chains, Dungeon, Twisted Symphony, Funeral Brass, Satanic Strings.
+21 factory presets: Init (Clean), Unease, Basement Hum, Bowed Morgue, Whispers Behind You, Heartbeat Gate, Asylum Pulse, Total Dread, Shock Stabs, Broken Piano, Demonic Whispers, Screams, Haunted Parlor, Rusty Chains, Dungeon, Twisted Symphony, Funeral Brass, Satanic Strings, Demented Organ, Heartbeat, Panic Attack.
 
 ## Building
 Requirements: CMake 3.22+, Git, and a C++17 compiler (Xcode on macOS, Visual Studio 2022 on Windows). JUCE is downloaded automatically.
