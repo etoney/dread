@@ -15,7 +15,7 @@ Tip: double-click a value readout under a knob to type an exact number
 HEADER
 -------------------------------------------------------------------------------
   PRESET MENU (top right)
-      Loads one of the 21 factory sounds, or one of your own saved presets
+      Loads one of the 22 factory sounds, or one of your own saved presets
       (listed under USER PRESETS). Each preset resets every knob to its
       default first, then applies its own settings.
 
@@ -23,8 +23,8 @@ HEADER
       Whispers Behind You Heartbeat Gate    Asylum Pulse      Total Dread
       Shock Stabs        Broken Piano       Demonic Whispers  Screams
       Haunted Parlor     Rusty Chains       Dungeon           Twisted Symphony
-      Funeral Brass      Satanic Strings    Demented Organ    Heartbeat
-      Panic Attack
+      Funeral Brass      Satanic Strings    Ghost Piano       Demented Organ
+      Heartbeat          Panic Attack
 
       "Init (Clean)" is the blank starting point: one plain drone and every
       effect turned off (no DREAD, Torment, ring mod, distortion, gate,
@@ -74,6 +74,14 @@ BROKEN PIANO: a modelled acoustic piano (felt hammers, 2-3 strings per key,
                      and rattling, and dead keys that just clunk.
   TIP: Use a short ATTACK (under 10 ms) so it sounds struck. A long attack
        turns it into a creepy reversed-piano swell.
+
+GHOST PIANO: the original DREAD piano, a glassy, bell-like haunted piano
+  LEVEL ....... Volume of the ghost piano.
+  BREAK ....... Pulls keys out of tune (fixed per key), spreads the paired
+                strings apart, drops overtones, adds string rattle and
+                dead keys.
+  TIP: Layer it with BROKEN PIANO: the real piano body plus a ghostly
+       shimmer on top.
 
 TWISTED SYMPHONY: an orchestra that's gone wrong
   LEVEL ....... Volume of the orchestra.

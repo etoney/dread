@@ -186,6 +186,8 @@ struct Params
     float organLevel = 0.0f, organDement = 0.5f, organStops = 0.5f;
     // Heartbeat
     float heartLevel = 0.0f, heartRate = 70.0f, heartPanic = 0.2f;
+    // Ghost Piano (the original additive piano)
+    float ghostLevel = 0.0f, ghostBreak = 0.5f;
 };
 
 // Per-key seed: the same key always makes the same "random" choices, so playback is repeatable.
@@ -353,6 +355,79 @@ private:
     bool dead = false; int numStrings = 3;
     std::array<Str, 3> strings;
     SVF hammerLp, clickHp; std::array<SVF, 3> board;
+};
+
+//==============================================================================
+// GHOST PIANO (the original DREAD piano) — additive/modal piano: stretched (inharmonic) partials on detuned string pairs,
+// hammer thump, per-key fixed detune (same key is always wrong the same way), dead keys, string rattle.
+class GhostPianoLayer
+{
+public:
+    void prepare (float sampleRate) { sr = sampleRate; }
+
+    void start (int note, float freq, float vel, float brk)
+    {
+        Rng key (keySeed (note, 21u));                           // per-key, deterministic
+        const float keyDetune = key.bi() * brk * 45.0f;
+        dead = key.uni() < brk * 0.22f;
+        rattle = brk * (0.15f + 0.35f * key.uni());
+        const float f0 = freq * centsToRatio (keyDetune);
+        const float B = 0.0003f * (1.0f + brk * 10.0f);
+        const float pairCents = 0.6f + brk * 14.0f;
+        const float baseT = 4.0f * std::pow (261.6f / f0, 0.45f) * (dead ? 0.12f : 1.0f);
+        Rng r (keySeed (note, 22u));                             // same key -> same partial pattern
+
+        num = 0;
+        for (int n = 1; n <= 12; ++n)
+        {
+            const float fn = f0 * (float) n * std::sqrt (1.0f + B * (float) (n * n));
+            if (fn > sr * 0.42f) break;
+            float amp = std::pow ((float) n, -0.9f) * (0.4f + 0.6f * std::pow (vel, (float) n * 0.15f));
+            if (r.uni() < brk * 0.3f) amp *= 0.08f;                    // missing partials
+            const float T = baseT / (1.0f + 0.45f * (float) (n - 1));
+            for (int s = 0; s < 2; ++s)
+            {
+                const float f  = fn * centsToRatio ((s == 0 ? -0.5f : 0.5f) * pairCents + r.bi() * brk * 3.0f);
+                const float w  = kTwoPi * f / sr;
+                const float rr = std::exp (-6.9f / (T * sr));
+                auto& p = parts[(size_t) num++];
+                p.c = 2.0f * rr * std::cos (w); p.r2 = rr * rr;
+                p.s2 = 0; p.s1 = amp * std::sin (w);
+                p.pan = s == 0 ? 0.35f : 0.65f;
+            }
+        }
+        hammerT = 0; hammerAmp = 0.5f * vel * (dead ? 2.0f : 1.0f);
+        hammer.set (std::min (f0 * 3.0f, 4500.0f), 1.5f, sr);
+    }
+
+    void tick (Rng& rng, float& l, float& rt)
+    {
+        float sl = 0, sr_ = 0;
+        for (int i = 0; i < num; ++i)
+        {
+            auto& p = parts[(size_t) i];
+            const float y = p.c * p.s1 - p.r2 * p.s2;
+            p.s2 = p.s1; p.s1 = y;
+            sl += y * (1.0f - p.pan); sr_ += y * p.pan;
+        }
+        // rattle: noise amplitude-modulated by the string signal
+        const float nz = rng.bi();
+        sl += sl * nz * rattle; sr_ += sr_ * nz * rattle;
+        // hammer thump
+        if (hammerT < 0.05f * sr)
+        {
+            const float h = hammer.bp (rng.bi()) * hammerAmp * std::exp (-hammerT / (0.006f * sr));
+            sl += h; sr_ += h; hammerT += 1.0f;
+        }
+        l = sl * 0.75f; rt = sr_ * 0.75f;
+    }
+
+private:
+    struct Partial { float c = 0, r2 = 0, s1 = 0, s2 = 0, pan = 0.5f; };
+    float sr = 48000, rattle = 0, hammerT = 1e9f, hammerAmp = 0;
+    bool dead = false; int num = 0;
+    std::array<Partial, 24> parts {};
+    SVF hammer;
 };
 
 //==============================================================================
@@ -862,7 +937,7 @@ public:
         sr = sampleRate; rng = Rng (seed);
         combA.init ((int) (sr / 15.0f) + 8); combB.init ((int) (sr / 15.0f) + 8);
         for (auto& o : osc) o.phase = rng.uni();
-        piano.prepare (sr); whisper.prepare (sr, seed ^ 0x51ED27u); scream.prepare (sr, seed ^ 0xBADC0DEu);
+        piano.prepare (sr); ghost.prepare (sr); whisper.prepare (sr, seed ^ 0x51ED27u); scream.prepare (sr, seed ^ 0xBADC0DEu);
         chains.prepare (sr, seed ^ 0xC4A1u);
         symphony.prepare (sr, seed ^ 0x5F0Du);
         organ.prepare (sr); heart.prepare (sr);
@@ -883,6 +958,7 @@ public:
         fenv.set (std::max (0.005f, p.attack * 0.6f), p.decay * 1.5f + 0.2f, 0.0f, p.release, sr);
         amp.on(); fenv.on();
         piano.start (n, baseFreq, velocity, p.pianoBreak);
+        ghost.start (n, baseFreq, velocity, p.ghostBreak);
         whisper.start (baseFreq, keySeed (n, 2u));
         scream.start (baseFreq, keySeed (n, 3u));
         chains.start (baseFreq, velocity, keySeed (n, 4u));
@@ -976,6 +1052,7 @@ public:
 
                 float el, er;
                 if (p.pianoLevel > 0.0001f)   { piano.tick (rng, el, er);                                 xl += el * p.pianoLevel;   xr += er * p.pianoLevel; }
+                if (p.ghostLevel > 0.0001f)   { ghost.tick (rng, el, er);                                 xl += el * p.ghostLevel;   xr += er * p.ghostLevel; }
                 if (p.whisperLevel > 0.0001f) { whisper.tick (p.airMotion, p.whisperDemon, el, er);       xl += el * p.whisperLevel; xr += er * p.whisperLevel; }
                 if (p.screamLevel > 0.0001f)  { scream.tick (p.screamRasp, el, er);                       xl += el * p.screamLevel;  xr += er * p.screamLevel; }
                 if (p.chainLevel > 0.0001f)   { chains.tick (p.chainRattle, p.chainRust, el, er);         xl += el * p.chainLevel;   xr += er * p.chainLevel; }
@@ -998,7 +1075,7 @@ private:
     SVF filtL, filtR, windL, windR;
     ADSR amp, fenv;
     PianoLayer piano; WhisperLayer whisper; ScreamLayer scream; ChainLayer chains; SymphonyLayer symphony;
-    OrganLayer organ; HeartbeatLayer heart;
+    OrganLayer organ; HeartbeatLayer heart; GhostPianoLayer ghost;
 };
 
 //==============================================================================

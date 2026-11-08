@@ -12,6 +12,7 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 | **Demon Whispers** | Two whisperers speaking random syllables with sibilants. *Demon* lowers the vocal tract and adds a period-doubled growl. Syllable speed follows Air *Motion* |
 | **Screams** | Voice-like source that swoops up into each note, with growing wild vibrato, jitter, breath and open-vowel formants. *Rasp* adds roughness, subharmonics and drive |
 | **Twisted Symphony** | A small orchestra section per note (players + low octave), each with its own vibrato and wandering intonation. *Twist* = players drift/slide apart, sour cluster notes creep in, and the section sags flat as notes are held; *Section* = strings → brass |
+| **Ghost Piano** | The original additive DREAD piano: glassy, bell-like stretched partials on detuned string pairs. *Break* = out-of-tune keys, missing overtones, rattle, dead keys |
 | **Demented Pipe Organ** | Additive pipe ranks (16' to mixtures and reeds). *Stops* = soft flute → full organ; *Dement* = ranks out of tune with each other, tremulant, wind-starved wobble, sagging pitch, a ciphering wrong pipe |
 | **Heartbeat** | Lub-dub heartbeat while a key is held. *Rate* in BPM; *Panic* speeds it up over time, makes it irregular and pounding |
 | **Rusty Chains** | Link-on-link impacts in little cascades through three banks of metal resonators, plus rusty grinding and creaks. *Rattle* = slow clinks → frantic shaking; *Rust* = duller links + more grinding |
@@ -23,7 +24,7 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 
 **FX chain:** Ring mod → Torment → Distortion (Tube, Tape, Fuzz, Wavefold, Bitcrush, Blown Speaker, with Drive / Tone / Mix) → 16-step tempo-synced Gate → Wobble (tape warble) → Ping-pong delay → 8-line FDN reverb (up to ~13 s tails) → Output.
 
-21 factory presets: Init (Clean), Unease, Basement Hum, Bowed Morgue, Whispers Behind You, Heartbeat Gate, Asylum Pulse, Total Dread, Shock Stabs, Broken Piano, Demonic Whispers, Screams, Haunted Parlor, Rusty Chains, Dungeon, Twisted Symphony, Funeral Brass, Satanic Strings, Demented Organ, Heartbeat, Panic Attack.
+22 factory presets: Init (Clean), Unease, Basement Hum, Bowed Morgue, Whispers Behind You, Heartbeat Gate, Asylum Pulse, Total Dread, Shock Stabs, Broken Piano, Demonic Whispers, Screams, Haunted Parlor, Rusty Chains, Dungeon, Twisted Symphony, Funeral Brass, Satanic Strings, Ghost Piano, Demented Organ, Heartbeat, Panic Attack.
 
 ## Building
 Requirements: CMake 3.22+, Git, and a C++17 compiler (Xcode on macOS, Visual Studio 2022 on Windows). JUCE is downloaded automatically.

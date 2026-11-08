@@ -71,6 +71,10 @@ const std::vector<Preset>& presets()
                                { "ringMix", 0.12f }, { "ringFreq", 33.0f }, { "attack", 0.45f }, { "sustain", 1.0f },
                                { "release", 3.5f }, { "cutoff", 6500.0f }, { "envAmount", 0.0f }, { "wobble", 0.3f },
                                { "reverbMix", 0.6f }, { "reverbSize", 1.0f }, { "delayMix", 0.1f } } },
+        { "Ghost Piano", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "ghostLevel", 1.0f },
+                           { "ghostBreak", 0.6f }, { "dread", 0.25f }, { "attack", 0.002f }, { "sustain", 1.0f },
+                           { "release", 1.4f }, { "cutoff", 9000.0f }, { "envAmount", 0.0f }, { "wobble", 0.3f },
+                           { "reverbMix", 0.45f }, { "reverbSize", 0.7f }, { "delayMix", 0.15f } } },
         { "Demented Organ", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "organLevel", 1.0f },
                               { "organDement", 0.6f }, { "organStops", 0.75f }, { "dread", 0.25f }, { "attack", 0.03f },
                               { "sustain", 1.0f }, { "release", 1.6f }, { "cutoff", 12000.0f }, { "envAmount", 0.0f },
@@ -140,6 +144,8 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
     add ("symphonyLevel", "Symphony Level", 0, 1, 0);
     add ("symphonyTwist", "Symphony Twist", 0, 1, 0.5f);
     add ("symphonySection", "Symphony Section", 0, 1, 0.3f);
+    add ("ghostLevel", "Ghost Piano Level", 0, 1, 0);
+    add ("ghostBreak", "Ghost Piano Break", 0, 1, 0.5f);
     add ("organLevel", "Organ Level", 0, 1, 0);
     add ("organDement", "Organ Dement", 0, 1, 0.5f);
     add ("organStops", "Organ Stops", 0, 1, 0.5f);
@@ -232,6 +238,7 @@ void DreadProcessor::pullParams()
     p.delayMix = get ("delayMix"); p.delayFeedback = get ("delayFeedback"); p.delayTime = (int) get ("delayTime");
     p.reverbMix = get ("reverbMix"); p.reverbSize = get ("reverbSize");
     p.symphonyLevel = get ("symphonyLevel"); p.symphonyTwist = get ("symphonyTwist"); p.symphonySection = get ("symphonySection");
+    p.ghostLevel = get ("ghostLevel"); p.ghostBreak = get ("ghostBreak");
     p.organLevel = get ("organLevel"); p.organDement = get ("organDement"); p.organStops = get ("organStops");
     p.heartLevel = get ("heartLevel"); p.heartRate = get ("heartRate"); p.heartPanic = get ("heartPanic");
     p.chainLevel = get ("chainLevel"); p.chainRattle = get ("chainRattle"); p.chainRust = get ("chainRust");
