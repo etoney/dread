@@ -36,6 +36,29 @@ jobs:
           cd /tmp/shot && git init -q -b screenshots && git add -A
           git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "GUI snapshot for ${GITHUB_SHA}"
           git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" screenshots
+      - name: Package release zip (same layout as the site downloads)
+        shell: bash
+        run: |
+          VER=$(sed -n 's/^project(DREAD VERSION \([0-9.]*\)).*/\1/p' CMakeLists.txt)
+          OS=$([ "$RUNNER_OS" = "macOS" ] && echo macOS || echo Windows)
+          ZIP="DREAD-v${VER}-${OS}.zip"
+          R=build/DREAD_artefacts/Release
+          mkdir -p pkg/DREAD/VST3 pkg/DREAD/Standalone
+          cp readme.txt controls.txt LICENSE.txt THIRD-PARTY-NOTICES.txt pkg/DREAD/
+          cp -R "$R/VST3/DREAD.vst3" pkg/DREAD/VST3/
+          if [ "$OS" = "macOS" ]; then
+            mkdir -p pkg/DREAD/AU && cp -R "$R/AU/DREAD.component" pkg/DREAD/AU/
+            cp -R "$R/Standalone/DREAD.app" pkg/DREAD/Standalone/
+            (cd pkg && ditto -c -k --sequesterRsrc --keepParent DREAD "../$ZIP")
+          else
+            cp "$R/Standalone/DREAD.exe" pkg/DREAD/Standalone/
+            (cd pkg && powershell -NoProfile -Command "Compress-Archive -Path DREAD -DestinationPath ../$ZIP -Force")
+          fi
+          ls -la "$ZIP"
+          BR="downloads-$(echo $OS | tr 'A-Z' 'a-z')"
+          mkdir -p /tmp/dl && cp "$ZIP" /tmp/dl/ && cd /tmp/dl && git init -q -b "$BR" && git add -A
+          git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "$ZIP for ${GITHUB_SHA}"
+          git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" "$BR"
       - uses: actions/upload-artifact@v4
         with:
           name: DREAD-${{ runner.os }}
