@@ -52,7 +52,7 @@ jobs:
             (cd pkg && ditto -c -k --sequesterRsrc --keepParent DREAD "../$ZIP")
           else
             cp "$R/Standalone/DREAD.exe" pkg/DREAD/Standalone/
-            (cd pkg && powershell -NoProfile -Command "Compress-Archive -Path DREAD -DestinationPath ../$ZIP -Force")
+            (cd pkg && 7z a -tzip -mx=9 "../$ZIP" DREAD > /dev/null)   # 7z writes forward-slash paths
           fi
           ls -la "$ZIP"
           BR="downloads-$(echo $OS | tr 'A-Z' 'a-z')"
