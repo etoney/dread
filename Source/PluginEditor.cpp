@@ -317,6 +317,7 @@ DreadEditor::DreadEditor (DreadProcessor& p)
         const auto character = proc.raiseHell();
         hellLabel.setText ("HELL RAISED: " + character, juce::dontSendNotification);
         hellFade = 1.0f; flicker = 1.0f;
+        hellLabel.setColour (juce::Label::textColourId, pal::signalHot);
         repaint();
     };
     addAndMakeVisible (hellButton);
