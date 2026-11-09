@@ -55,6 +55,9 @@ private:
     std::vector<Section> sections;
 
     juce::TextButton saveButton { "SAVE" };
+    juce::TextButton hellButton { "RAISE HELL" };
+    juce::Label hellLabel;
+    float hellFade = 0.0f;
     std::unique_ptr<juce::AlertWindow> dialog;
     int lastPresetId = 1;
     static constexpr int kShowFolderId = 9001, kDeleteId = 9002, kRefreshId = 9003;

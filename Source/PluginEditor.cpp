@@ -142,6 +142,15 @@ juce::Font DreadLookAndFeel::getTextButtonFont (juce::TextButton&, int h) { retu
 void DreadLookAndFeel::drawButtonBackground (juce::Graphics& g, juce::Button& b, const juce::Colour&, bool hi, bool down)
 {
     auto r = b.getLocalBounds().toFloat().reduced (0.5f);
+    if (b.getName() == "raiseHell")   // the big red button
+    {
+        g.setColour (juce::Colours::black.withAlpha (0.6f)); g.fillRoundedRectangle (r.translated (1.0f, 2.0f), 3.0f);
+        g.setGradientFill (juce::ColourGradient (down ? pal::rustDeep : (hi ? pal::signalHot : pal::signal), r.getCentreX(), r.getY(),
+                                                 down ? juce::Colour (0xff3a0e06) : pal::rustDeep, r.getCentreX(), r.getBottom(), false));
+        g.fillRoundedRectangle (r, 3.0f);
+        g.setColour (hi ? juce::Colour (0xffffb08a) : juce::Colour (0xff2a0a05)); g.drawRoundedRectangle (r, 3.0f, 1.4f);
+        return;
+    }
     g.setColour (juce::Colours::black.withAlpha (0.55f)); g.fillRoundedRectangle (r.translated (1.0f, 1.5f), 3.0f);
     g.setGradientFill (juce::ColourGradient (down ? pal::rustDeep : juce::Colour (0xff3a2a20), 0, r.getY(),
                                              down ? juce::Colour (0xff2a120a) : juce::Colour (0xff17110e), 0, r.getBottom(), false));
@@ -300,6 +309,22 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     saveButton.setTooltip ("Save the current settings as a new preset");
     saveButton.onClick = [this] { showSaveDialog(); };
     addAndMakeVisible (saveButton);
+    hellButton.setName ("raiseHell");
+    hellButton.setColour (juce::TextButton::textColourOffId, juce::Colours::white);
+    hellButton.setTooltip ("Randomly (but musically) re-roll every effect for a new texture");
+    hellButton.onClick = [this]
+    {
+        const auto character = proc.raiseHell();
+        hellLabel.setText ("HELL RAISED: " + character, juce::dontSendNotification);
+        hellFade = 1.0f; flicker = 1.0f;
+        repaint();
+    };
+    addAndMakeVisible (hellButton);
+    hellLabel.setJustificationType (juce::Justification::centred);
+    hellLabel.setFont (tex::plainBold (10.5f).withExtraKerningFactor (0.08f));
+    hellLabel.setColour (juce::Label::textColourId, pal::signalHot.withAlpha (0.0f));
+    hellLabel.setInterceptsMouseClicks (false, false);
+    addAndMakeVisible (hellLabel);
 
     gateRateBox.addItemList ({ "1/8", "1/16", "1/32", "1/16T" }, 1);
     delayTimeBox.addItemList ({ "1/4", "1/8.", "1/8", "1/16" }, 1);
@@ -492,7 +517,12 @@ void DreadEditor::resized()
     saveButton.setBounds (presetArea.removeFromRight (64).withSizeKeepingCentre (64, 28));
     presetArea.removeFromRight (6);
     presetBox.setBounds (presetArea.withSizeKeepingCentre (presetArea.getWidth(), 28));
-    badgeArea = juce::Rectangle<int> (0, 0, 420, 52).withCentre ({ getWidth() / 2 - 10, header.getCentreY() });
+    badgeArea = juce::Rectangle<int> (0, 0, 400, 52).withCentre ({ 528, header.getCentreY() });
+    {
+        auto hb = juce::Rectangle<int> (badgeArea.getRight() + 12, header.getY() + 3, presetBox.getX() - badgeArea.getRight() - 24, 30);
+        hellButton.setBounds (hb);
+        hellLabel.setBounds (hb.getX() - 30, hb.getBottom() + 2, hb.getWidth() + 60, 16);
+    }
 
     keyboard.setBounds (r.removeFromBottom (60));
     keyboard.setKeyWidth ((float) keyboard.getWidth() / 50.0f);
@@ -736,6 +766,11 @@ void DreadEditor::paint (juce::Graphics& g)
 
 void DreadEditor::timerCallback()
 {
+    if (hellFade > 0.0f)
+    {
+        hellFade = std::max (0.0f, hellFade - 0.012f);   // ~4 s at 20 Hz
+        hellLabel.setColour (juce::Label::textColourId, pal::signalHot.withAlpha (std::min (1.0f, hellFade * 1.6f)));
+    }
     const float d = proc.apvts.getRawParameterValue ("dread")->load();
     auto& rnd = juce::Random::getSystemRandom();
     const float before = flicker;

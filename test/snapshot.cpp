@@ -33,6 +33,26 @@ int main (int argc, char** argv)
                 off = off && proc.apvts.getRawParameterValue (id)->load() < 0.0001f;
             check (off, "Init (Clean): all effects off");
         }
+        // ---- RAISE HELL: changes effects, never touches sources / envelope / output
+        {
+            const float droneBefore = proc.apvts.getRawParameterValue ("droneLevel")->load();
+            const float outBefore   = proc.apvts.getRawParameterValue ("outputDb")->load();
+            const float attackBefore = proc.apvts.getRawParameterValue ("attack")->load();
+            const auto character = proc.raiseHell();
+            std::printf ("raise hell -> %s\n", character.toRawUTF8());
+            check (character.isNotEmpty(), "raise hell returns a character");
+            check (proc.apvts.getRawParameterValue ("reverbMix")->load() > 0.05f, "raise hell set the reverb");
+            check (proc.apvts.getRawParameterValue ("droneLevel")->load() == droneBefore
+                   && proc.apvts.getRawParameterValue ("outputDb")->load() == outBefore
+                   && proc.apvts.getRawParameterValue ("attack")->load() == attackBefore, "raise hell leaves sources/envelope/output alone");
+            juce::TextButton* hb = nullptr;
+            for (auto* c : ed->getChildren()) if (auto* tb = dynamic_cast<juce::TextButton*> (c)) if (tb->getButtonText() == "RAISE HELL") hb = tb;
+            check (hb != nullptr, "RAISE HELL button exists");
+            if (hb != nullptr && hb->onClick) hb->onClick();
+            check (writePng (ed->createComponentSnapshot (ed->getLocalBounds(), true, 2.0f), dir.getChildFile ("gui_hell.png")), "raise hell snapshot");
+            proc.setCurrentProgram (0);
+        }
+
         // ---- preset folder location (matches Possessed)
         const auto folder = DreadProcessor::getUserPresetFolder().getFullPathName();
         std::printf ("preset folder: %s\n", folder.toRawUTF8());

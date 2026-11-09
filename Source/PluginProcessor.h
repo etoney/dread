@@ -1,6 +1,7 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
 #include "DreadEngine.h"
+#include "RaiseHell.h"
 
 class DreadProcessor : public juce::AudioProcessor
 {
@@ -42,6 +43,9 @@ public:
     bool saveUserPreset (const juce::String& name);      // saves current settings, selects it
     bool deleteUserPreset (int programIndex);
     bool isUserPreset (int programIndex) const { return programIndex >= getNumFactoryPresets(); }
+
+    // RAISE HELL: re-roll every effect (randomly, but within musical rules). Returns the character name.
+    juce::String raiseHell();
     juce::AudioProcessorValueTreeState apvts;
     juce::MidiKeyboardState keyboardState;
 

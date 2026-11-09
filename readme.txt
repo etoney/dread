@@ -316,7 +316,7 @@ unless you clear things out:
         defaults read ~/Library/Audio/Plug-Ins/VST3/DREAD.vst3/Contents/Info.plist CFBundleShortVersionString
   7. Start your DAW and load the plugin on a NEW track. Existing songs may
      have saved the old preset list and window size.
-     DREAD shows its version (e.g. "v1.8.0") next to the logo.
+     DREAD shows its version (e.g. "v1.9.0") next to the logo.
 
 
 -------------------------------------------------------------------------------

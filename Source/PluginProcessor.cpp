@@ -451,6 +451,19 @@ void DreadProcessor::setStateInformation (const void* data, int sizeInBytes)
         }
 }
 
+juce::String DreadProcessor::raiseHell()
+{
+    const auto roll = dread::rollHell ((uint32_t) juce::Random::getSystemRandom().nextInt());
+    for (const auto& [id, value] : roll.values)
+        if (auto* rp = apvts.getParameter (id))
+        {
+            rp->beginChangeGesture();
+            rp->setValueNotifyingHost (rp->convertTo0to1 (value));
+            rp->endChangeGesture();
+        }
+    return roll.character;
+}
+
 juce::AudioProcessorEditor* DreadProcessor::createEditor() { return new DreadEditor (*this); }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return new DreadProcessor(); }
