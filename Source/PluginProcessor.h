@@ -46,6 +46,10 @@ public:
 
     // RAISE HELL: re-roll every effect (randomly, but within musical rules). Returns the character name.
     juce::String raiseHell();
+
+private:
+    int lastHellCharacter = -1;
+public:
     juce::AudioProcessorValueTreeState apvts;
     juce::MidiKeyboardState keyboardState;
 

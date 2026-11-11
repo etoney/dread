@@ -56,7 +56,7 @@ private:
 
     juce::TextButton saveButton { "SAVE" };
     juce::TextButton hellButton { "RAISE HELL" };
-    juce::Label hellLabel;
+    juce::String hellText;
     float hellFade = 0.0f;
     std::unique_ptr<juce::AlertWindow> dialog;
     int lastPresetId = 1;

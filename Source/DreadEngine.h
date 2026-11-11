@@ -231,11 +231,14 @@ public:
                 break;
             case 4: // Bitcrush: bit depth 16 -> 3 bits, sample-rate down to ~1/40
             {
-                const int factor = 1 + (int) (drive * drive * 40.0f);
+                // bites early: bit depth falls fast at first, sample-rate reduction grows steadily
+                const int factor = 1 + (int) (std::pow (drive, 1.3f) * 40.0f);
                 if (++holdCount >= factor) { holdCount = 0; hold = x; }
-                const float bits = 16.0f - drive * 13.0f;
-                const float steps = std::pow (2.0f, bits - 1.0f);
-                y = std::round (hold * steps) / steps;
+                const float bits = 16.0f - std::pow (drive, 0.55f) * 13.0f;
+                // quantise relative to the signal's own level, so quiet sources crush hard but never vanish
+                env = std::max (std::abs (x), env * 0.9997f) + 1e-5f;
+                const float steps = std::pow (2.0f, bits - 1.0f) * 0.5f;
+                y = std::round (hold / env * steps) / steps * env;
                 break;
             }
             default: // Blown Speaker: harsh asymmetric clip, a cone that bottoms out, crackling dropouts
@@ -253,7 +256,7 @@ public:
     }
 
 private:
-    float sr = 48000, hold = 0; int holdCount = 0, crackle = 0;
+    float sr = 48000, hold = 0, env = 0.1f; int holdCount = 0, crackle = 0;
     Rng rng; OnePole toneLp;
 };
 
@@ -1339,9 +1342,10 @@ public:
         const float cutoffMul  = 1.0f - d * 0.45f;
         const float subAmt     = d * 0.25f;
         const float airAmt     = d * 0.3f;
-        const float ringMix    = clampf (p.ringMix + d * 0.3f, 0.0f, 1.0f);
-        const float wobble     = clampf (p.wobble + d * 0.35f, 0.0f, 1.0f);
-        reverb.setSize (clampf (p.reverbSize + d * 0.2f, 0.0f, 1.0f));
+        // DREAD adds to these, but never pins them at maximum: the knob always keeps room to move
+        const float ringMix    = 1.0f - (1.0f - clampf (p.ringMix, 0.0f, 1.0f)) * (1.0f - d * 0.3f);
+        const float wobble     = 1.0f - (1.0f - clampf (p.wobble, 0.0f, 1.0f)) * (1.0f - d * 0.35f);
+        reverb.setSize (1.0f - (1.0f - clampf (p.reverbSize, 0.0f, 1.0f)) * (1.0f - d * 0.2f));
 
         for (auto& v : voices) if (v.active()) v.render (L, R, n, p, driftCents, driftRate, cutoffMul, subAmt, airAmt);
         // stings render to their own bus: they skip ring/torment/distortion/gate so the hit stays huge

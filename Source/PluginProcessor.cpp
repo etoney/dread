@@ -453,7 +453,8 @@ void DreadProcessor::setStateInformation (const void* data, int sizeInBytes)
 
 juce::String DreadProcessor::raiseHell()
 {
-    const auto roll = dread::rollHell ((uint32_t) juce::Random::getSystemRandom().nextInt());
+    const auto roll = dread::rollHell ((uint32_t) juce::Random::getSystemRandom().nextInt(), lastHellCharacter);
+    lastHellCharacter = roll.primary;
     for (const auto& [id, value] : roll.values)
         if (auto* rp = apvts.getParameter (id))
         {

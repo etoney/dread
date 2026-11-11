@@ -315,17 +315,11 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     hellButton.onClick = [this]
     {
         const auto character = proc.raiseHell();
-        hellLabel.setText ("HELL RAISED: " + character, juce::dontSendNotification);
+        hellText = "HELL RAISED: " + character;
         hellFade = 1.0f; flicker = 1.0f;
-        hellLabel.setColour (juce::Label::textColourId, pal::signalHot);
         repaint();
     };
     addAndMakeVisible (hellButton);
-    hellLabel.setJustificationType (juce::Justification::centred);
-    hellLabel.setFont (tex::plainBold (10.5f).withExtraKerningFactor (0.08f));
-    hellLabel.setColour (juce::Label::textColourId, pal::signalHot.withAlpha (0.0f));
-    hellLabel.setInterceptsMouseClicks (false, false);
-    addAndMakeVisible (hellLabel);
 
     gateRateBox.addItemList ({ "1/8", "1/16", "1/32", "1/16T" }, 1);
     delayTimeBox.addItemList ({ "1/4", "1/8.", "1/8", "1/16" }, 1);
@@ -514,16 +508,18 @@ void DreadEditor::resized()
     auto r = getLocalBounds().reduced (14);
     auto header = r.removeFromTop (60);
     logoArea  = header.withWidth (300);
-    auto presetArea = header.removeFromRight (250);
-    saveButton.setBounds (presetArea.removeFromRight (64).withSizeKeepingCentre (64, 28));
-    presetArea.removeFromRight (6);
-    presetBox.setBounds (presetArea.withSizeKeepingCentre (presetArea.getWidth(), 28));
-    badgeArea = juce::Rectangle<int> (0, 0, 400, 52).withCentre ({ 528, header.getCentreY() });
-    {
-        auto hb = juce::Rectangle<int> (badgeArea.getRight() + 12, header.getY() + 3, presetBox.getX() - badgeArea.getRight() - 24, 30);
-        hellButton.setBounds (hb);
-        hellLabel.setBounds (hb.getX() - 30, hb.getBottom() + 2, hb.getWidth() + 60, 16);
-    }
+    // right-hand group, one row, all the same height: [RAISE HELL] [preset menu] [SAVE]
+    auto group = header.removeFromRight (398);
+    const int rowY = header.getCentreY() - 14;
+    saveButton.setBounds (group.removeFromRight (58).withY (rowY).withHeight (28));
+    group.removeFromRight (6);
+    presetBox.setBounds (group.removeFromRight (210).withY (rowY).withHeight (28));
+    group.removeFromRight (8);
+    hellButton.setBounds (group.removeFromRight (116).withY (rowY).withHeight (28));
+    // badge centred in the space between the logo and that group
+    const int badgeLeft = logoArea.getRight() + 8, badgeRight = hellButton.getX() - 12;
+    badgeArea = juce::Rectangle<int> (0, 0, juce::jmin (390, badgeRight - badgeLeft), 52).withCentre ({ (badgeLeft + badgeRight) / 2, header.getCentreY() });
+
 
     keyboard.setBounds (r.removeFromBottom (60));
     keyboard.setKeyWidth ((float) keyboard.getWidth() / 50.0f);
@@ -732,7 +728,7 @@ void DreadEditor::buildBackdrop()
     // CASTLE DANGER MC badge
     plateFrame (badge, false);
     g.setColour (pal::paint.withAlpha (0.25f)); g.drawRect (badge.reduced (5.0f), 1.0f);
-    auto brand = tex::distressedText ("CASTLE DANGER MUSIC COMPANY", badgeArea.getWidth() - 30, badgeArea.getHeight() - 8, tex::stencil (25.0f),
+    auto brand = tex::distressedText ("CASTLE DANGER MUSIC COMPANY", badgeArea.getWidth() - 30, badgeArea.getHeight() - 8, tex::stencil (23.0f),
                                       juce::Colour (0xffeadfc4), juce::Justification::centred, scale, 0.24f, 4242, 0.14f);
     g.setColour (juce::Colours::black);
     g.setOpacity (0.7f); g.drawImage (brand, badge.reduced (15.0f, 4.0f).translated (1.5f, 2.0f));
@@ -763,6 +759,18 @@ void DreadEditor::paint (juce::Graphics& g)
         g.setOpacity (alpha); g.drawImage (logoImage, la);
         g.setOpacity (1.0f);
     }
+
+    // RAISE HELL: the character name burns across the badge, then fades back to the logo
+    if (hellFade > 0.0f && hellText.isNotEmpty())
+    {
+        const float a = std::min (1.0f, hellFade * 1.8f);
+        auto b = badgeArea.toFloat().reduced (6.0f, 6.0f);
+        g.setColour (juce::Colour (0xff120a07).withAlpha (0.92f * a)); g.fillRect (b);
+        g.setColour (pal::signal.withAlpha (0.6f * a)); g.drawRect (b, 1.0f);
+        g.setColour (pal::signalHot.withAlpha (a));
+        g.setFont (tex::stencil (19.0f).withExtraKerningFactor (0.06f));
+        g.drawFittedText (hellText, b.reduced (8.0f, 2.0f).toNearestInt(), juce::Justification::centred, 1, 0.6f);
+    }
 }
 
 void DreadEditor::timerCallback()
@@ -770,7 +778,7 @@ void DreadEditor::timerCallback()
     if (hellFade > 0.0f)
     {
         hellFade = std::max (0.0f, hellFade - 0.012f);   // ~4 s at 20 Hz
-        hellLabel.setColour (juce::Label::textColourId, pal::signalHot.withAlpha (std::min (1.0f, hellFade * 1.6f)));
+        repaint (badgeArea.expanded (4));
     }
     const float d = proc.apvts.getRawParameterValue ("dread")->load();
     auto& rnd = juce::Random::getSystemRandom();

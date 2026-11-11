@@ -35,21 +35,34 @@ HEADER
       is fixed per key, so a track plays back the same way every time.
 
   RAISE HELL (the red button)
-      Re-rolls every effect for a brand-new texture each time you press it:
+      Re-rolls every effect for a new texture each time you press it:
       DREAD, TORMENT, ring mod, wobble, distortion (type, drive, tone, mix),
       filter, gate (depth, rate and rhythm), delay and reverb.
-      It's random, but not careless. Each press picks a character:
-          CAVERNOUS ...... huge room, very little grit
-          CORRODED ....... bitcrushed, blown or fuzzed, broken electronics
-          PULSING ........ the gate chops in a real rhythm, echoes in time
-          SEASICK ........ warped, throbbing, wobbling and wrong
-          SHREDDED ....... aggressive distortion and Torment
-          POSSESSED HALL . echoes that answer back in a ringing hall
-      then keeps combinations musical: loudness stays in a sensible range,
-      heavy distortion gets darkened, rooms and echoes don't drown the
-      sound, and gate rhythms come from real patterns.
+      Each press picks one of 11 characters, often blended with a second
+      one, sometimes with one effect pushed hard (a "wildcard"):
+          CAVERNOUS ......... huge room, very little grit
+          CORRODED .......... bitcrushed, blown or fuzzed electronics
+          PULSING ........... the gate chops in a real rhythm
+          SEASICK ........... warped, throbbing and wobbling
+          SHREDDED .......... aggressive distortion and Torment
+          POSSESSED HALL .... echoes that answer back in a ringing hall
+          UNDERWATER ........ muffled, resonant and swaying
+          RADIO FROM HELL ... narrow, crushed and ringing, like a bad radio
+          FROZEN ............ endless clean echoes and a vast room
+          GLITCH ............ fast, stuttering chops and crushed bits
+          DYING MACHINE ..... a slow, failing motor of wobble and ring
+      You never get the same character twice in a row, and the name burns
+      across the CASTLE DANGER badge for a few seconds.
+
+      It's a STARTING POINT: every knob stays live afterwards.
+        - Effects a roll leaves OFF have their amount knob at 0 with their
+          other settings ready, so turning that one knob up brings the
+          effect straight in (Ring, Wobble, Drive, Gate Depth, Delay).
+        - DREAD is kept moderate, and it never pins Ring, Wobble or reverb
+          Size at maximum, so those knobs always have room to move.
+        - Loudness stays in a sensible range with headroom to spare.
       It never touches your sound sources, envelope, stings or Output.
-      The character name flashes under the button. Like a result? SAVE it.
+      Like a result? SAVE it.
 
   SAVE BUTTON (next to the preset menu)
       Saves every current setting as a new preset. Type a name and press

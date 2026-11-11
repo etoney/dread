@@ -22,7 +22,7 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 - **DREAD**: one knob that raises pitch drift, darkens the filter, adds ring mod, sub, whisper, wobble and reverb size together.
 - **TORMENT**: low-end body boost plus heavy saturation.
 
-**RAISE HELL** button: re-rolls every effect within one of six characters (Cavernous, Corroded, Pulsing, Seasick, Shredded, Possessed Hall) with rules that keep loudness, wet level and distortion musical. Sources, envelope, stings and output are untouched.
+**RAISE HELL** button: re-rolls every effect within one of 11 characters (often blended with a second, sometimes with a wildcard effect pushed hard), never repeating the last character, with rules that keep loudness, wet level and distortion musical and leave every knob live as a starting point. Sources, envelope, stings and output are untouched.
 
 **FX chain:** Ring mod → Torment → Distortion (Tube, Tape, Fuzz, Wavefold, Bitcrush, Blown Speaker, with Drive / Tone / Mix) → 16-step tempo-synced Gate → Wobble (tape warble) → Ping-pong delay → 8-line FDN reverb (up to ~13 s tails) → Output.
 

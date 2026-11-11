@@ -45,6 +45,34 @@ int main (int argc, char** argv)
             check (proc.apvts.getRawParameterValue ("droneLevel")->load() == droneBefore
                    && proc.apvts.getRawParameterValue ("outputDb")->load() == outBefore
                    && proc.apvts.getRawParameterValue ("attack")->load() == attackBefore, "raise hell leaves sources/envelope/output alone");
+            // knobs must still work after RAISE HELL: render through the real processBlock, turn knobs, render again
+            auto renderPlugin = [&proc]
+            {
+                proc.prepareToPlay (48000.0, 512);
+                std::vector<float> out; juce::AudioBuffer<float> buf (2, 512);
+                for (int b = 0; b < 140; ++b)
+                {
+                    juce::MidiBuffer midi;
+                    if (b == 0) { midi.addEvent (juce::MidiMessage::noteOn (1, 45, (juce::uint8) 110), 0); midi.addEvent (juce::MidiMessage::noteOn (1, 52, (juce::uint8) 100), 0); }
+                    buf.clear(); proc.processBlock (buf, midi);
+                    out.insert (out.end(), buf.getReadPointer (0), buf.getReadPointer (0) + 512);
+                }
+                return out;
+            };
+            auto diffDb = [] (const std::vector<float>& a, const std::vector<float>& b)
+            { double d = 0, sg = 0; for (size_t i = 0; i < a.size(); ++i) { d += (a[i] - b[i]) * (a[i] - b[i]); sg += a[i] * a[i]; } return 10.0 * std::log10 (d / (sg + 1e-20) + 1e-20); };
+            auto turn = [&proc] (const char* id, float value) { auto* rp = proc.apvts.getParameter (id); rp->beginChangeGesture(); rp->setValueNotifyingHost (rp->convertTo0to1 (value)); rp->endChangeGesture(); };
+            for (int round = 0; round < 3; ++round)
+            {
+                proc.raiseHell();
+                const auto before = renderPlugin();
+                const float d0 = proc.apvts.getRawParameterValue ("delayMix")->load(), r0 = proc.apvts.getRawParameterValue ("ringMix")->load();
+                turn ("delayMix", juce::jmin (1.0f, d0 + 0.45f)); turn ("ringMix", juce::jmin (1.0f, r0 + 0.5f));
+                const double dd = diffDb (before, renderPlugin());
+                std::printf ("after raise hell round %d: turning Delay+Ring up changed the output by %.1f dB\n", round, dd);
+                check (dd > -21.0, "knobs still change the sound after RAISE HELL");
+            }
+
             juce::TextButton* hb = nullptr;
             for (auto* c : ed->getChildren()) if (auto* tb = dynamic_cast<juce::TextButton*> (c)) if (tb->getButtonText() == "RAISE HELL") hb = tb;
             check (hb != nullptr, "RAISE HELL button exists");
