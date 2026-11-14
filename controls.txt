@@ -268,8 +268,8 @@ QUICK RECIPES
                           DEMON WHISPERS.
   Chase-scene pulse ..... "Asylum Pulse" preset, raise TORMENT, set
                           DISTORTION to Fuzz.
-  Possessed choir ....... "Screams" preset, hold 3-4 high notes, RASP up,
-                          DISTORTION to Blown Speaker.
+  Tolling doom .......... "Hell's Bells" preset. Play slow low notes (C2-C3)
+                          and turn SINISTER up as the scene darkens.
   Chained in the dungeon . "Dungeon" preset. Hold low notes, raise RATTLE
                           when something is coming.
   Jumpscares ............ Any preset. Play C6 and up. Pick the hit with the
