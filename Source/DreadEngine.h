@@ -174,14 +174,15 @@ struct Params
     // Extra sources
     float pianoLevel = 0.0f, pianoBreak = 0.5f;
     float whisperLevel = 0.0f, whisperDemon = 0.4f;
-    float screamLevel = 0.0f, screamRasp = 0.4f;
     // Distortion
     float distDrive = 0.0f, distTone = 0.7f, distMix = 1.0f; int distType = 0;
     // Chains + sting type
     float chainLevel = 0.0f, chainRattle = 0.4f, chainRust = 0.5f;
     int stingType = 0;
-    // Twisted Symphony
-    float symphonyLevel = 0.0f, symphonyTwist = 0.5f, symphonySection = 0.3f;
+    // Twisted Strings (param ids kept from the old Twisted Symphony so saved sounds still load)
+    float symphonyLevel = 0.0f, symphonyTwist = 0.5f;
+    // Hell's Bells
+    float bellLevel = 0.0f, bellSinister = 0.3f;
     // Demented Pipe Organ
     float organLevel = 0.0f, organDement = 0.5f, organStops = 0.5f;
     // Heartbeat
@@ -514,180 +515,208 @@ private:
     std::array<Whisperer, 2> wh;
 };
 
-// SCREAMS — blood-curdling: two slightly detuned vocal-fold sources an octave above the key,
-// a violent swoop up into the scream, straining upward, wide shaking vibrato, chaotic jitter,
-// voice cracks that leap up and fall back, breathy turbulence locked to the glottal pulse,
-// bright open-vowel formants, amplitude tremor and hard saturation. RASP = roughness,
-// subharmonic fry, more cracks and more drive.
-class ScreamLayer
-{
-public:
-    void prepare (float sampleRate, uint32_t seed) { sr = sampleRate; rng = Rng (seed); }
-
-    void start (float freq, uint32_t seed)
-    {
-        rng = Rng (seed);
-        base = std::min (freq * 2.0f, 1700.0f); t = 0; curFreq = base;
-        vibPh = rng.uni(); vibRate = 6.0f + rng.uni() * 2.5f; tremRate = 8.0f + rng.uni() * 4.0f;
-        pan = 0.3f + rng.uni() * 0.4f; vowel = rng.uni();
-        crackAmt = 0; crackTarget = 0; crackEnd = 0; nextCrack = 0.35f + rng.uni() * 0.7f;
-        for (int v = 0; v < 2; ++v) { glottis[(size_t) v].phase = rng.uni(); jitter[(size_t) v].reset(); jitter[(size_t) v].setRate (15.0f + 6.0f * (float) v, sr); }
-        odd = false;
-        for (auto& f : form) f.reset();
-        rough.setCutoff (220.0f, sr); breathHp.reset(); presence.reset();
-    }
-
-    void control (float rasp)
-    {
-        const float f1 = clampf (curFreq * 1.05f, 750.0f, 1400.0f);
-        form[0].set (f1, 3.5f, sr);
-        form[1].set (1450.0f + vowel * 900.0f, 6.0f, sr);
-        form[2].set (2950.0f, 8.0f, sr);
-        form[3].set (4200.0f, 9.0f, sr);
-        breathHp.set (1600.0f, 0.7f, sr);
-        presence.set (3500.0f, 0.7f, sr);
-        drive = 2.0f + rasp * 7.0f;
-        crackRate = 0.6f + rasp * 1.2f;
-    }
-
-    void tick (float rasp, float& l, float& r)
-    {
-        const float tt = t; t += 1.0f / sr;
-        // voice cracks: leap up a 4th/5th for a moment, then fall back
-        if (tt >= nextCrack)
-        {
-            crackTarget = (rng.uni() < 0.5f ? 5.0f : 7.0f) * (0.7f + 0.5f * rasp);
-            crackEnd = tt + 0.07f + rng.uni() * 0.2f;
-            nextCrack = tt + (0.4f + rng.uni() * 2.0f) / crackRate;
-        }
-        const float crack = tt < crackEnd ? crackTarget : 0.0f;
-        crackAmt += (crack - crackAmt) * 0.006f;
-
-        const float swoop  = -6.0f * std::exp (-tt * 20.0f);
-        const float strain = 1.2f * std::min (1.0f, tt / 2.5f);
-        vibPh += vibRate / sr; if (vibPh >= 1.0f) vibPh -= 1.0f;
-        const float vib = std::sin (kTwoPi * vibPh) * (0.25f + 0.55f * std::min (1.0f, tt / 1.0f));
-
-        float src = 0, breath = 0;
-        for (int v = 0; v < 2; ++v)
-        {
-            const float semis = swoop + strain + crackAmt + vib + jitter[(size_t) v].tick (rng) * (0.2f + 0.6f * rasp) + (v ? 0.14f : 0.0f);
-            const float f = std::min (base * std::pow (2.0f, semis / 12.0f), sr * 0.3f);
-            if (v == 0) curFreq = f;
-            auto& g = glottis[(size_t) v];
-            const float before = g.phase;
-            float x = g.tick (f / sr);
-            if (v == 0 && g.phase < before) odd = ! odd;
-            if (v == 0 && odd) x *= 1.0f - rasp * 0.6f;                         // vocal fry / subharmonic
-            src += x * (v ? 0.7f : 1.0f);
-            breath += rng.bi() * (g.phase < 0.35f ? 1.0f : 0.25f);               // pulse-locked turbulence
-        }
-        src *= 1.0f + rough.lp (rng.bi()) * rasp * 10.0f;
-        src += breathHp.hp (breath) * (0.35f + rasp * 0.5f);
-
-        float y = form[0].bp (src) * 1.0f + form[1].bp (src) * 0.85f + form[2].bp (src) * 0.7f + form[3].bp (src) * 0.45f;
-        y *= 1.0f - 0.2f * (0.5f + 0.5f * std::sin (kTwoPi * tremRate * tt));
-        y = std::tanh (y * 0.3f * drive) / std::sqrt (drive);
-        y += presence.hp (y) * 0.5f;
-        l = y * (1.0f - pan) * 1.9f; r = y * pan * 1.9f;
-    }
-
-private:
-    float sr = 48000, base = 440, t = 0, curFreq = 440, vibPh = 0, vibRate = 6, tremRate = 9, pan = 0.5f, vowel = 0.5f;
-    float crackAmt = 0, crackTarget = 0, crackEnd = 0, nextCrack = 1, crackRate = 1, drive = 3;
-    bool odd = false;
-    Rng rng; std::array<Saw, 2> glottis; std::array<Drift, 2> jitter; OnePole rough; SVF breathHp, presence;
-    std::array<SVF, 4> form;
-};
-
 //==============================================================================
-// TWISTED SYMPHONY — a small orchestra section per note: 6 players on the note, 2 an octave below,
-// each with their own vibrato and slowly wandering intonation. TWIST spreads the tuning, makes the
-// players slide away from each other, adds a minor-2nd and tritone cluster, and lets the whole section
-// sag flat the longer a note is held. SECTION blends bowed strings (body resonances + rosin) to brass.
-class SymphonyLayer
+// TWISTED STRINGS — a bowed string section per note. Eight players, each with their own tuning, bow
+// timing (they don't all start together), Helmholtz-motion (saw-like) string tone, stick-slip bow noise,
+// and vibrato that only blooms after the note has settled, as real players do. A violin/viola/cello body
+// resonance bank (chosen by register) shapes the tone; the bow attack starts dark and opens up.
+// SINISTER (0 = clean, warm section): players drift and slide apart, vibrato turns wide and slow,
+// sul ponticello (glassy, nasal, scratchy bowing near the bridge), sour cluster notes creep in,
+// nervous bow tremolo, and the whole section sags flat the longer a chord is held.
+class StringsLayer
 {
 public:
     void prepare (float sampleRate, uint32_t seed) { sr = sampleRate; rng = Rng (seed); }
 
-    void start (float freq, float vel, uint32_t seed)
+    void start (float freq, float vel, int note, uint32_t seed)
     {
         rng = Rng (seed);
-        base = freq; t = 0; brassEnv = 0; velocity = vel;
+        base = freq; t = 0; velocity = vel;
+        bodyScale = note < 43 ? 0.5f : (note < 55 ? 0.72f : 1.0f);          // cello / viola / violin body
         for (int i = 0; i < kPlayers; ++i)
         {
             auto& pl = players[(size_t) i];
             pl.osc.phase = rng.uni();
-            pl.vibRate = 4.6f + rng.uni() * 1.8f; pl.vibPh = rng.uni();
-            pl.detune = rng.bi(); pl.pan = 0.15f + 0.7f * ((float) (i % 6) / 5.0f);
-            pl.drift.reset(); pl.drift.setRate (0.07f + rng.uni() * 0.25f, sr);
-            pl.inc = freq / sr;
+            pl.detune = rng.bi();
+            pl.vibRate = 4.8f + rng.uni() * 1.4f; pl.vibPh = rng.uni(); pl.vibDepth = 8.0f + rng.uni() * 7.0f;
+            pl.vibOnset = 0.18f + rng.uni() * 0.4f;
+            pl.delay = rng.uni() * 0.03f; pl.attack = 0.07f + rng.uni() * 0.12f;
+            pl.pan = 0.12f + 0.76f * ((float) (i % kMain) / (float) (kMain - 1));
+            pl.drift.reset(); pl.drift.setRate (0.08f + rng.uni() * 0.25f, sr);
+            pl.inc = freq / sr; pl.amp = 0;
         }
-        for (auto& f : body) f.reset();
-        brassL.reset(); brassR.reset();
+        tremPh = rng.uni();
+        for (auto& f : bodyL) f.reset();
+        for (auto& f : bodyR) f.reset();
+        bowL.reset(); bowR.reset(); pontL.reset(); pontR.reset(); noiseBp.reset();
     }
 
-    // called every 16 samples
-    void control (float twist, float section, int blockLen)
+    void control (float sinister, int blockLen)
     {
         const float dt = (float) blockLen / sr;
-        const float sag = -twist * 2.2f * std::min (1.0f, t / 7.0f);                 // semitones
+        const float s = sinister;
+        const float sag = -s * 1.8f * std::min (1.0f, t / 7.0f);              // semitones
         for (int i = 0; i < kPlayers; ++i)
         {
             auto& pl = players[(size_t) i];
-            pl.vibPh += pl.vibRate * dt; if (pl.vibPh >= 1.0f) pl.vibPh -= 1.0f;
-            const float d = pl.drift.tick (rng);
-            for (int k = 1; k < blockLen; ++k) pl.drift.tick (rng);                  // advance drift at audio rate
-            const float cents = pl.detune * (4.0f + twist * 50.0f)
-                              + d * twist * 130.0f
-                              + std::sin (kTwoPi * pl.vibPh) * (11.0f + twist * 28.0f)
+            const float rate = pl.vibRate * (1.0f - 0.45f * s);
+            pl.vibPh += rate * dt; if (pl.vibPh >= 1.0f) pl.vibPh -= 1.0f;
+            const float d = pl.drift.tick (rng); for (int k = 1; k < blockLen; ++k) pl.drift.tick (rng);
+            const float bloom = smoothstep01 ((t - pl.vibOnset) / 0.45f);
+            const float cents = pl.detune * (3.0f + s * 38.0f)
+                              + d * s * 110.0f
+                              + std::sin (kTwoPi * pl.vibPh) * pl.vibDepth * (1.0f + s * 2.2f) * bloom
                               + sag * 100.0f * (0.6f + 0.4f * std::abs (pl.detune));
             float mul = 1.0f;
-            if (i >= 6 && i < 8) mul = 0.5f;                                      // low section
-            if (i == 8) mul = 1.0595f;                                           // minor 2nd
-            if (i == 9) mul = 1.4142f;                                           // tritone
+            if (i == kMain)     mul = 1.0595f;                                  // minor 2nd
+            if (i == kMain + 1) mul = 1.4142f;                                  // tritone
             pl.inc = std::min (0.45f, base * mul * centsToRatio (cents) / sr);
+            const float on = smoothstep01 ((t - pl.delay) / pl.attack);
+            pl.amp = i >= kMain ? on * s * s * 0.5f : on;
         }
-        clusterGain = twist * twist * 0.55f;
-        // strings body resonances
-        body[0].set (290.0f, 2.0f, sr); body[1].set (720.0f, 2.2f, sr);
-        body[2].set (2600.0f, 1.6f, sr); body[3].set (3500.0f, 2.5f, sr);
-        // brass: brightness swells in with the note
-        brassEnv += (1.0f - brassEnv) * std::min (1.0f, dt * 7.0f);
-        const float bc = std::min (sr * 0.4f, base * (1.5f + 9.0f * brassEnv * (0.5f + 0.5f * velocity)));
-        brassL.set (bc, 0.9f, sr); brassR.set (bc, 0.9f, sr);
-        rosin.set (4500.0f, 0.7f, sr);
-        mixSection = section;
+        // bow attack: dark at first, opening as the bow grips; harder playing = brighter
+        const float grip = 1.0f - std::exp (-t / 0.07f);
+        const float bright = (1400.0f + 6500.0f * grip * (0.55f + 0.45f * velocity)) * (0.85f + 0.3f * s);
+        bowL.set (std::min (bright, sr * 0.45f), 0.7f, sr); bowR.set (std::min (bright, sr * 0.45f), 0.7f, sr);
+        static constexpr float bf[5] = { 275.0f, 460.0f, 1100.0f, 2700.0f, 3600.0f };
+        static constexpr float bq[5] = { 3.0f, 4.0f, 2.0f, 1.6f, 2.5f };
+        for (int k = 0; k < 5; ++k)
+        {
+            const float f = std::min (bf[k] * (k < 3 ? bodyScale : (0.8f + 0.2f * bodyScale)), sr * 0.45f);
+            bodyL[(size_t) k].set (f, bq[k], sr); bodyR[(size_t) k].set (f * 1.03f, bq[k], sr);
+        }
+        pontL.set (2800.0f, 0.7f, sr); pontR.set (2800.0f, 0.7f, sr);
+        noiseBp.set (std::min (base * 6.0f, 7000.0f), 1.2f, sr);
+        pont = s * 0.9f; scratch = 0.02f + s * 0.07f;
+        tremPh += 11.0f * dt; if (tremPh >= 1.0f) tremPh -= 1.0f;
+        trem = 1.0f - std::pow (s, 1.5f) * 0.55f * (0.5f + 0.5f * std::sin (kTwoPi * tremPh));
         t += dt;
     }
 
     void tick (float& l, float& r)
     {
-        float sl = 0, sr_ = 0;
+        float sl = 0, sr_ = 0, stick = 0;
         for (int i = 0; i < kPlayers; ++i)
         {
             auto& pl = players[(size_t) i];
-            float v = pl.osc.tick (pl.inc);
-            if (i >= 8) v *= clusterGain;
-            else if (i >= 6) v *= 0.8f;
+            if (pl.amp < 0.0005f) { pl.osc.tick (pl.inc); continue; }
+            const float v = pl.osc.tick (pl.inc) * pl.amp;
+            if (pl.osc.phase < 0.12f) stick += pl.amp;                          // stick-slip release moment
             sl += v * (1.0f - pl.pan); sr_ += v * pl.pan;
         }
-        // strings: body resonances + a little rosin noise
-        const float nz = rosin.hp (rng.bi()) * 0.08f;
-        const float mono = (sl + sr_) * 0.5f;
-        const float bodyRes = body[0].bp (mono) * 0.5f + body[1].bp (mono) * 0.45f + body[2].bp (mono) * 0.3f + body[3].bp (mono) * 0.2f;
-        const float strL = sl * 0.35f + bodyRes + nz, strR = sr_ * 0.35f + bodyRes + nz;
-        // brass: closed-then-opening lowpass with a bit of blat
-        const float brL = std::tanh (brassL.lp (sl) * 1.6f), brR = std::tanh (brassR.lp (sr_) * 1.6f);
-        l = (strL * (1.0f - mixSection) + brL * mixSection * 0.9f) * 0.32f;
-        r = (strR * (1.0f - mixSection) + brR * mixSection * 0.9f) * 0.32f;
+        const float bowNoise = noiseBp.bp (rng.bi()) * stick * scratch;
+        sl = bowL.lp (sl + bowNoise); sr_ = bowR.lp (sr_ + bowNoise);
+        auto body = [] (std::array<SVF, 5>& b, float x)
+        { return x * 0.35f + b[0].bp (x) * 0.55f + b[1].bp (x) * 0.5f + b[2].bp (x) * 0.3f + b[3].bp (x) * 0.45f + b[4].bp (x) * 0.25f; };
+        float yl = body (bodyL, sl), yr = body (bodyR, sr_);
+        yl += pontL.hp (yl) * pont * 1.6f; yr += pontR.hp (yr) * pont * 1.6f;
+        l = yl * trem * 0.21f; r = yr * trem * 0.21f;
     }
 
 private:
-    static constexpr int kPlayers = 10;
-    struct Player { Saw osc; Drift drift; float inc = 0.01f, vibRate = 5, vibPh = 0, detune = 0, pan = 0.5f; };
-    float sr = 48000, base = 220, t = 0, brassEnv = 0, velocity = 1, clusterGain = 0, mixSection = 0;
-    Rng rng; std::array<Player, kPlayers> players; std::array<SVF, 4> body; SVF brassL, brassR, rosin;
+    static float smoothstep01 (float x) { x = clampf (x, 0.0f, 1.0f); return x * x * (3.0f - 2.0f * x); }
+    static constexpr int kMain = 8, kPlayers = kMain + 2;
+    struct Player { Saw osc; Drift drift; float inc = 0.01f, detune = 0, vibRate = 5, vibPh = 0, vibDepth = 10, vibOnset = 0.3f, delay = 0, attack = 0.1f, pan = 0.5f, amp = 0; };
+    float sr = 48000, base = 220, t = 0, velocity = 1, bodyScale = 1, pont = 0, scratch = 0.02f, tremPh = 0, trem = 1;
+    Rng rng; std::array<Player, kPlayers> players;
+    std::array<SVF, 5> bodyL, bodyR; SVF bowL, bowR, pontL, pontR, noiseBp;
+};
+
+//==============================================================================
+// HELL'S BELLS — modal church bell. Each partial follows a real bell's tuning (hum, prime, tierce, quint,
+// nominal, deciem, undeciem, octave nominal and upper partials), split into a pair of slightly different
+// modes that beat against each other (the bell's warble), struck by a clapper (harder = brighter), with the
+// low partials ringing far longer than the high ones. Lower keys = bigger bells with longer tails.
+// SINISTER (0 = a clean, well-tuned bell): the partials bend toward a cursed tuning (grinding minor-2nd
+// tierce, a tritone where the fifth should be, flat octaves), faster ominous beating, a doom sub-octave,
+// a darker, heavier strike, longer ring, and the bell's pitch slowly sinks as it rings.
+class BellsLayer
+{
+public:
+    void prepare (float sampleRate) { sr = sampleRate; }
+
+    void start (float freq, float vel, uint32_t seed, float sinister)
+    {
+        rng = Rng (seed);
+        base = freq; t = 0; s = sinister;
+        static constexpr float clean[kPartials]    = { 0.5f, 1.0f, 1.183f, 1.506f, 2.0f, 2.514f, 2.662f, 3.011f, 4.166f, 5.433f, 6.796f, 0.25f };
+        static constexpr float cursed[kPartials]   = { 0.47f, 1.0f, 1.062f, 1.414f, 1.94f, 2.38f, 2.79f, 2.88f, 4.42f, 5.2f, 7.1f, 0.25f };
+        static constexpr float amp[kPartials]      = { 0.35f, 0.5f, 0.45f, 0.25f, 1.0f, 0.45f, 0.35f, 0.3f, 0.2f, 0.12f, 0.08f, 0.0f };
+        static constexpr float life[kPartials]     = { 1.0f, 0.65f, 0.5f, 0.35f, 0.45f, 0.25f, 0.22f, 0.18f, 0.12f, 0.09f, 0.06f, 1.2f };
+        const float humT = clampf (18.0f * std::pow (261.6f / freq, 0.8f), 2.0f, 45.0f) * (1.0f + s * 0.5f);
+        for (int k = 0; k < kPartials; ++k)
+        {
+            const float jitter = rng.bi() * (0.003f + s * 0.02f);
+            ratio[k] = (clean[k] + (cursed[k] - clean[k]) * s) * (1.0f + jitter);
+            float a = amp[k];
+            if (k == kPartials - 1) a = 0.45f * s;                              // doom sub-octave
+            if (k >= 5 && k < kPartials - 1) a *= (1.0f - 0.5f * s) * std::pow (vel, 0.4f + 0.15f * (float) k);   // harder strike = brighter
+            if (k == 0) a *= 1.0f + s * 0.6f;
+            const float T = humT * life[k];
+            const float beatHz = (0.25f + rng.uni() * 1.1f) * (1.0f + s * 3.5f);
+            for (int d = 0; d < 2; ++d)
+            {
+                auto& m = modes[(size_t) (k * 2 + d)];
+                m.hzOffset = d == 0 ? 0.0f : beatHz;
+                m.amp = a * (d == 0 ? 0.62f : 0.38f);
+                m.decay = std::exp (-6.9f / (T * sr));
+                m.re = 0; m.im = 0;                                              // struck below
+                m.pan = 0.5f + (d == 0 ? -0.18f : 0.18f) * (k & 1 ? 1.0f : -1.0f);
+                const float ph = rng.uni() * kTwoPi;
+                m.re = std::cos (ph) * m.amp; m.im = std::sin (ph) * m.amp;
+            }
+        }
+        strikeT = 0; strikeAmp = (0.25f + 0.75f * vel) * (1.0f - 0.4f * s);
+        strikeBp.reset(); strikeBp.set (std::min (freq * 4.0f, 9000.0f), 1.6f, sr);
+        thunkPh = 0;
+        updateFreqs();
+    }
+
+    void control (int blockLen)
+    {
+        t += (float) blockLen / sr;
+        updateFreqs();
+    }
+
+    void tick (float& l, float& r)
+    {
+        float sl = 0, sr_ = 0;
+        for (auto& m : modes)
+        {
+            const float re = m.re * m.c - m.im * m.sn, im = m.re * m.sn + m.im * m.c;
+            m.re = re * m.decay; m.im = im * m.decay;
+            sl += m.im * (1.0f - m.pan); sr_ += m.im * m.pan;
+        }
+        // clapper strike: a short metallic click and a low thunk
+        if (strikeT < 0.08f * sr)
+        {
+            const float tt = strikeT / sr;
+            thunkPh += (90.0f + 60.0f * std::exp (-tt * 50.0f)) / sr;
+            const float hit = strikeBp.bp (rng.bi()) * std::exp (-tt * 160.0f) * 1.4f + std::sin (kTwoPi * thunkPh) * std::exp (-tt * 40.0f) * 0.4f;
+            sl += hit * strikeAmp; sr_ += hit * strikeAmp; strikeT += 1.0f;
+        }
+        l = sl * 1.15f; r = sr_ * 1.15f;
+    }
+
+private:
+    static constexpr int kPartials = 12;
+    void updateFreqs()
+    {
+        const float sink = std::pow (2.0f, -s * 1.2f * std::min (1.0f, t / 6.0f) / 12.0f);   // pitch slowly sinks when sinister
+        for (int k = 0; k < kPartials; ++k)
+            for (int d = 0; d < 2; ++d)
+            {
+                auto& m = modes[(size_t) (k * 2 + d)];
+                const float f = std::min (base * ratio[k] * sink + m.hzOffset, sr * 0.45f);
+                const float w = kTwoPi * f / sr;
+                m.c = std::cos (w); m.sn = std::sin (w);
+            }
+    }
+    struct Mode { float re = 0, im = 0, c = 1, sn = 0, decay = 0.9999f, amp = 0, hzOffset = 0, pan = 0.5f; };
+    float sr = 48000, base = 220, t = 0, s = 0, strikeT = 1e9f, strikeAmp = 0, thunkPh = 0;
+    float ratio[kPartials] {};
+    std::array<Mode, kPartials * 2> modes;
+    Rng rng; SVF strikeBp;
 };
 
 //==============================================================================
@@ -940,9 +969,9 @@ public:
         sr = sampleRate; rng = Rng (seed);
         combA.init ((int) (sr / 15.0f) + 8); combB.init ((int) (sr / 15.0f) + 8);
         for (auto& o : osc) o.phase = rng.uni();
-        piano.prepare (sr); ghost.prepare (sr); whisper.prepare (sr, seed ^ 0x51ED27u); scream.prepare (sr, seed ^ 0xBADC0DEu);
+        piano.prepare (sr); ghost.prepare (sr); whisper.prepare (sr, seed ^ 0x51ED27u); bells.prepare (sr);
         chains.prepare (sr, seed ^ 0xC4A1u);
-        symphony.prepare (sr, seed ^ 0x5F0Du);
+        strings.prepare (sr, seed ^ 0x5F0Du);
         organ.prepare (sr); heart.prepare (sr);
     }
 
@@ -963,9 +992,9 @@ public:
         piano.start (n, baseFreq, velocity, p.pianoBreak);
         ghost.start (n, baseFreq, velocity, p.ghostBreak);
         whisper.start (baseFreq, keySeed (n, 2u));
-        scream.start (baseFreq, keySeed (n, 3u));
+        bells.start (baseFreq, velocity, keySeed (n, 3u), p.bellSinister);
         chains.start (baseFreq, velocity, keySeed (n, 4u));
-        symphony.start (baseFreq, velocity, keySeed (n, 5u));
+        strings.start (baseFreq, velocity, n, keySeed (n, 5u));
         organ.start (baseFreq, velocity, keySeed (n, 6u));
         heart.start (baseFreq, velocity, keySeed (n, 7u));
     }
@@ -1005,9 +1034,9 @@ public:
             windR.set ((200.0f + g1 * g1 * 1300.0f) * windScale, 1.6f + g1 * 1.4f, sr);
             if (p.organLevel > 0.0001f)   organ.control (p.organDement, p.organStops, m);
             if (p.whisperLevel > 0.0001f) whisper.control (p.airMotion, p.whisperDemon);
-            if (p.screamLevel > 0.0001f)  scream.control (p.screamRasp);
+            if (p.bellLevel > 0.0001f)    bells.control (m);
             if (p.chainLevel > 0.0001f)   chains.control (p.chainRattle, p.chainRust);
-            if (p.symphonyLevel > 0.0001f) symphony.control (p.symphonyTwist, p.symphonySection, m);
+            if (p.symphonyLevel > 0.0001f) strings.control (p.symphonyTwist, m);
 
             for (int j = 0; j < m; ++j)
             {
@@ -1057,9 +1086,9 @@ public:
                 if (p.pianoLevel > 0.0001f)   { piano.tick (rng, el, er);                                 xl += el * p.pianoLevel;   xr += er * p.pianoLevel; }
                 if (p.ghostLevel > 0.0001f)   { ghost.tick (rng, el, er);                                 xl += el * p.ghostLevel;   xr += er * p.ghostLevel; }
                 if (p.whisperLevel > 0.0001f) { whisper.tick (p.airMotion, p.whisperDemon, el, er);       xl += el * p.whisperLevel; xr += er * p.whisperLevel; }
-                if (p.screamLevel > 0.0001f)  { scream.tick (p.screamRasp, el, er);                       xl += el * p.screamLevel;  xr += er * p.screamLevel; }
+                if (p.bellLevel > 0.0001f)    { bells.tick (el, er);                                      xl += el * p.bellLevel;    xr += er * p.bellLevel; }
                 if (p.chainLevel > 0.0001f)   { chains.tick (p.chainRattle, p.chainRust, el, er);         xl += el * p.chainLevel;   xr += er * p.chainLevel; }
-                if (p.symphonyLevel > 0.0001f) { symphony.tick (el, er);                                  xl += el * p.symphonyLevel; xr += er * p.symphonyLevel; }
+                if (p.symphonyLevel > 0.0001f) { strings.tick (el, er);                                   xl += el * p.symphonyLevel; xr += er * p.symphonyLevel; }
                 if (p.organLevel > 0.0001f)   { organ.tick (el, er);                                      xl += el * p.organLevel;   xr += er * p.organLevel; }
                 if (p.heartLevel > 0.0001f)   { heart.tick (p.heartRate, p.heartPanic, el, er);           xl += el * p.heartLevel;   xr += er * p.heartLevel; }
 
@@ -1077,7 +1106,7 @@ private:
     DelayLine combA, combB; OnePole combDampA, combDampB;
     SVF filtL, filtR, windL, windR;
     ADSR amp, fenv;
-    PianoLayer piano; WhisperLayer whisper; ScreamLayer scream; ChainLayer chains; SymphonyLayer symphony;
+    PianoLayer piano; WhisperLayer whisper; BellsLayer bells; ChainLayer chains; StringsLayer strings;
     OrganLayer organ; HeartbeatLayer heart; GhostPianoLayer ghost;
 };
 

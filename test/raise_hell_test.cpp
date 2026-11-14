@@ -25,7 +25,7 @@ int main(){
   int blends=0; for(uint32_t s=1;s<=400;s++) if(dread::rollHell(s).character.find('/')!=std::string::npos) blends++;
   printf("characters:"); for(auto&[c,k]:chars) printf(" %s=%d",c.c_str(),k); printf("\nblended rolls %d/400, distinct results %zu/400\n",blends,distinct.size());
 
-  double minDb=1e9,maxDb=-1e9; float maxPeak=0; int weak[5]={0,0,0,0,0}; const char* knob[5]={"scream level","delay","distortion drive","ring","gate depth"};
+  double minDb=1e9,maxDb=-1e9; float maxPeak=0; int weak[5]={0,0,0,0,0}; const char* knob[5]={"bell level","delay","distortion drive","ring","gate depth"};
   int tested=0;
   for(uint32_t seed=7; seed<=400; seed+=13){ auto roll=dread::rollHell(seed);
     dread::Params p; p.metalLevel=0.4f; p.airLevel=0.2f; p.attack=0.05f; dread::applyRoll(roll,p);
@@ -33,7 +33,7 @@ int main(){
     for(float v:base){ if(!std::isfinite(v)){bad++;break;} maxPeak=std::max(maxPeak,std::abs(v)); }
     tested++;
     // knob changes after the roll must be audible
-    { dread::Params q=p; q.screamLevel=1; auto x=render(q,{38,45,50,64},3); auto y=render(p,{38,45,50,64},3); if(diffDb(y,x)<=-21) weak[0]++; }
+    { dread::Params q=p; q.bellLevel=1; auto x=render(q,{38,45,50,64},3); auto y=render(p,{38,45,50,64},3); if(diffDb(y,x)<=-21) weak[0]++; }
     { dread::Params q=p; q.delayMix=std::min(1.f,p.delayMix+0.4f); { double dd=diffDb(base,render(q,{38,45,50},3)); if(dd<=-21){ weak[1]++; printf("  weak delay: seed %u delay %.2f fb %.2f reverb %.2f gate %.2f diff %.1f\n",seed,p.delayMix,p.delayFeedback,p.reverbMix,p.gateDepth,dd);} } }
     { dread::Params q=p; q.distDrive=std::min(1.f,p.distDrive+0.5f); double dd=diffDb(base,render(q,{38,45,50},3)); if(dd<=-21){ weak[2]++; printf("  weak drive: seed %u type %d drive %.2f->%.2f mix %.2f tone %.2f torment %.2f diff %.1f dB\n",seed,p.distType,p.distDrive,q.distDrive,p.distMix,p.distTone,p.torment,dd);} }
     { dread::Params q=p; q.ringMix=std::min(1.f,p.ringMix+0.5f); if(diffDb(base,render(q,{38,45,50},3))<=-21) weak[3]++; }

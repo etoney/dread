@@ -15,16 +15,16 @@ Tip: double-click a value readout under a knob to type an exact number
 HEADER
 -------------------------------------------------------------------------------
   PRESET MENU (top right)
-      Loads one of the 22 factory sounds, or one of your own saved presets
+      Loads one of the 23 factory sounds, or one of your own saved presets
       (listed under USER PRESETS). Each preset resets every knob to its
       default first, then applies its own settings.
 
       Init (Clean)       Unease             Basement Hum      Bowed Morgue
       Whispers Behind You Heartbeat Gate    Asylum Pulse      Total Dread
-      Shock Stabs        Broken Piano       Demonic Whispers  Screams
-      Haunted Parlor     Rusty Chains       Dungeon           Twisted Symphony
-      Funeral Brass      Satanic Strings    Ghost Piano       Demented Organ
-      Heartbeat          Panic Attack
+      Shock Stabs        Broken Piano       Demonic Whispers  Haunted Parlor
+      Rusty Chains       Dungeon            Twisted Strings   Funeral Bells
+      Hell's Bells       Church Bells (Clean) Satanic Strings Ghost Piano
+      Demented Organ     Heartbeat          Panic Attack
 
       "Init (Clean)" is the blank starting point: one plain drone and every
       effect turned off (no DREAD, Torment, ring mod, distortion, gate,
@@ -113,15 +113,17 @@ GHOST PIANO: the original DREAD piano, a glassy, bell-like haunted piano
   TIP: Layer it with BROKEN PIANO: the real piano body plus a ghostly
        shimmer on top.
 
-TWISTED SYMPHONY: an orchestra that's gone wrong
-  LEVEL ....... Volume of the orchestra.
-  TWIST ....... 0  = a clean, slightly human ensemble.
-                Up = players drift and slide out of tune against each other,
-                a sour minor-2nd and tritone creep into every note, and the
-                whole section sags flat the longer you hold a chord.
-  SECTION ..... 0 = bowed strings. 100% = brass. In between = both.
-  TIP: Slow ATTACK (0.3-1 s) makes the bows swell in. Hold chords: the
-       longer they ring, the more the orchestra falls apart.
+TWISTED STRINGS: a bowed string section
+  LEVEL ....... Volume of the strings.
+  SINISTER .... 0  = a clean, warm string section: eight players, each with
+                     their own tuning and bow timing, vibrato that blooms
+                     after the note settles, and a real instrument body
+                     (cello, viola or violin depending on the key).
+                Up = the players drift and slide apart, vibrato turns wide
+                     and slow, glassy scratchy bowing near the bridge, sour
+                     clashing notes creep in, nervous bow tremolo, and the
+                     whole section sags flat the longer you hold a chord.
+  TIP: A slow ATTACK (0.3-1 s) lets the bows swell in.
 
 DEMENTED PIPE ORGAN
   LEVEL ....... Volume of the organ.
@@ -154,13 +156,18 @@ DEMON WHISPERS
                 Up = deeper throats plus a guttural growl underneath.
   (Talking speed comes from AIR > MOTION.)
 
-SCREAMS: blood-curdling screams
-  LEVEL ....... Volume of the screams.
-  RASP ........ Roughness: vocal fry, more voice cracks, and a shredded,
-                distorted throat.
-  Each note swoops violently up into the scream (an octave above the key),
-  strains higher, shakes with a wide vibrato and cracks as the voice breaks.
-  Play several notes for a crowd.
+HELL'S BELLS: church bells
+  LEVEL ....... Volume of the bells.
+  SINISTER .... 0  = a clean, well-tuned church bell: the real bell overtones
+                     (hum, prime, minor-third tierce, fifth, octave and up),
+                     a gentle warble, a clapper strike, and a long ring.
+                Up = the bell's tuning turns cursed (a grinding minor 2nd, a
+                     tritone where the fifth should be, flat octaves), the
+                     warble gets faster and more ominous, a doom sub-octave
+                     joins, the strike turns darker and heavier, it rings
+                     longer, and its pitch slowly sinks as it rings.
+  TIP: Lower keys = bigger bells with longer tails. Set RELEASE long
+       (6-10 s) so the bell keeps ringing after you let go.
 
 RUSTY CHAINS
   LEVEL ....... Volume of the chains.

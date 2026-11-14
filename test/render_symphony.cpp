@@ -7,11 +7,11 @@ void run(dread::Engine&e,float sec){ std::vector<float> l(B),r(B); for(int b=0;b
 int main(int argc,char**argv){
   int chord[]={45,52,57,60,64};
   for(float tw: {0.1f,0.6f,1.0f}){ dread::Engine e; e.prepare(SR,B); auto&p=e.params;
-    p.droneLevel=p.metalLevel=p.airLevel=0; p.symphonyLevel=1; p.symphonyTwist=tw; p.symphonySection=0.25f; p.dread=0.35f; p.attack=0.6f; p.sustain=1; p.release=2.5f;
+    p.droneLevel=p.metalLevel=p.airLevel=0; p.symphonyLevel=1; p.symphonyTwist=tw; p.dread=0.35f; p.attack=0.6f; p.sustain=1; p.release=2.5f;
     p.cutoff=9000; p.envAmount=0; p.wobble=0.25f; p.reverbMix=0.55f; p.reverbSize=0.85f; p.delayMix=0.08f;
     for(int n:chord) e.noteOn(n,0.75f); run(e,4.5f); e.allNotesOff(); run(e,1.5f); }
   { dread::Engine e; e.prepare(SR,B); auto&p=e.params;
-    p.droneLevel=0.2f; p.droneSub=0.6f; p.metalLevel=0; p.airLevel=0; p.symphonyLevel=1; p.symphonyTwist=0.4f; p.symphonySection=0.85f; p.dread=0.3f; p.torment=0.25f;
+    p.droneLevel=0.2f; p.droneSub=0.6f; p.metalLevel=0; p.airLevel=0; p.symphonyLevel=1; p.symphonyTwist=0.4f; p.dread=0.3f; p.torment=0.25f;
     p.attack=0.25f; p.sustain=1; p.release=2; p.cutoff=7000; p.envAmount=0; p.reverbMix=0.5f; p.reverbSize=0.9f;
     int prog[3][3]={{41,48,53},{40,47,52},{38,45,50}}; for(auto&c:prog){ for(int n:c) e.noteOn(n,0.9f); run(e,1.8f); for(int n:c) e.noteOff(n);} run(e,2.5f); }
   printf("seconds=%.1f peak=%.3f finite=%s\n",OL.size()/(float)SR,peak,bad?"NO":"yes");

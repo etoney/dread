@@ -40,10 +40,6 @@ const std::vector<Preset>& presets()
                                 { "whisperDemon", 0.75f }, { "airMotion", 0.6f }, { "dread", 0.5f }, { "attack", 0.3f },
                                 { "sustain", 1.0f }, { "release", 2.5f }, { "cutoff", 12000.0f }, { "envAmount", 0.0f },
                                 { "reverbMix", 0.45f }, { "delayMix", 0.25f }, { "wobble", 0.2f } } },
-        { "Screams", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "screamLevel", 1.0f },
-                       { "screamRasp", 0.5f }, { "dread", 0.2f }, { "torment", 0.2f }, { "attack", 0.04f }, { "sustain", 1.0f },
-                       { "release", 0.6f }, { "cutoff", 14000.0f }, { "envAmount", 0.0f }, { "reverbMix", 0.5f },
-                       { "reverbSize", 0.8f }, { "delayMix", 0.1f } } },
         { "Haunted Parlor", { { "droneLevel", 0.15f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "pianoLevel", 0.9f },
                               { "pianoBreak", 0.5f }, { "whisperLevel", 0.5f }, { "whisperDemon", 0.5f }, { "dread", 0.4f },
                               { "attack", 0.002f }, { "sustain", 1.0f }, { "release", 2.0f }, { "cutoff", 8000.0f },
@@ -56,16 +52,24 @@ const std::vector<Preset>& presets()
                        { "chainLevel", 0.8f }, { "chainRattle", 0.25f }, { "chainRust", 0.8f }, { "whisperLevel", 0.35f },
                        { "whisperDemon", 0.7f }, { "dread", 0.55f }, { "cutoff", 5000.0f }, { "reverbMix", 0.6f },
                        { "reverbSize", 0.95f }, { "release", 4.0f } } },
-        { "Twisted Symphony", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "symphonyLevel", 1.0f },
-                                { "symphonyTwist", 0.55f }, { "symphonySection", 0.25f }, { "dread", 0.35f }, { "attack", 0.6f },
+        { "Twisted Strings", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "symphonyLevel", 1.0f },
+                                { "symphonyTwist", 0.55f }, { "dread", 0.35f }, { "attack", 0.6f },
                                 { "sustain", 1.0f }, { "release", 2.5f }, { "cutoff", 9000.0f }, { "envAmount", 0.0f },
                                 { "wobble", 0.25f }, { "reverbMix", 0.55f }, { "reverbSize", 0.85f }, { "delayMix", 0.08f } } },
-        { "Funeral Brass", { { "droneLevel", 0.2f }, { "droneSub", 0.6f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f },
-                             { "symphonyLevel", 1.0f }, { "symphonyTwist", 0.4f }, { "symphonySection", 0.85f }, { "dread", 0.3f },
-                             { "torment", 0.25f }, { "attack", 0.25f }, { "sustain", 1.0f }, { "release", 2.0f },
-                             { "cutoff", 7000.0f }, { "envAmount", 0.0f }, { "reverbMix", 0.5f }, { "reverbSize", 0.9f } } },
+        { "Funeral Bells", { { "droneLevel", 0.2f }, { "droneSub", 0.6f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f },
+                             { "bellLevel", 1.0f }, { "bellSinister", 0.45f }, { "symphonyLevel", 0.35f }, { "symphonyTwist", 0.35f },
+                             { "dread", 0.3f }, { "attack", 0.002f }, { "sustain", 1.0f }, { "release", 9.0f },
+                             { "cutoff", 9000.0f }, { "envAmount", 0.0f }, { "reverbMix", 0.55f }, { "reverbSize", 0.95f } } },
+        { "Hell's Bells", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "bellLevel", 1.0f },
+                            { "bellSinister", 0.85f }, { "dread", 0.35f }, { "attack", 0.002f }, { "sustain", 1.0f },
+                            { "release", 10.0f }, { "cutoff", 12000.0f }, { "envAmount", 0.0f }, { "wobble", 0.15f },
+                            { "reverbMix", 0.55f }, { "reverbSize", 1.0f }, { "delayMix", 0.12f } } },
+        { "Church Bells (Clean)", { { "droneLevel", 0.0f }, { "metalLevel", 0.0f }, { "airLevel", 0.0f }, { "bellLevel", 1.0f },
+                                    { "bellSinister", 0.0f }, { "dread", 0.0f }, { "torment", 0.0f }, { "wobble", 0.0f }, { "attack", 0.002f },
+                                    { "sustain", 1.0f }, { "release", 10.0f }, { "cutoff", 16000.0f }, { "envAmount", 0.0f },
+                                    { "reverbMix", 0.4f }, { "reverbSize", 0.85f } } },
         { "Satanic Strings", { { "droneLevel", 0.25f }, { "droneSub", 0.7f }, { "droneDetune", 0.5f }, { "metalLevel", 0.0f },
-                               { "airLevel", 0.0f }, { "symphonyLevel", 1.0f }, { "symphonyTwist", 0.8f }, { "symphonySection", 0.1f },
+                               { "airLevel", 0.0f }, { "symphonyLevel", 1.0f }, { "symphonyTwist", 0.8f },
                                { "whisperLevel", 0.35f }, { "whisperDemon", 0.85f }, { "airMotion", 0.35f }, { "dread", 0.6f },
                                { "torment", 0.3f }, { "distDrive", 0.25f }, { "distType", 0.0f }, { "distMix", 0.6f },
                                { "ringMix", 0.12f }, { "ringFreq", 33.0f }, { "attack", 0.45f }, { "sustain", 1.0f },
@@ -138,12 +142,11 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
     add ("pianoBreak", "Piano Break", 0, 1, 0.5f);
     add ("whisperLevel", "Whisper Level", 0, 1, 0);
     add ("whisperDemon", "Whisper Demon", 0, 1, 0.4f);
-    add ("screamLevel", "Scream Level", 0, 1, 0);
-    add ("screamRasp", "Scream Rasp", 0, 1, 0.4f);
+    add ("bellLevel", "Hell's Bells Level", 0, 1, 0);
+    add ("bellSinister", "Hell's Bells Sinister", 0, 1, 0.3f);
 
-    add ("symphonyLevel", "Symphony Level", 0, 1, 0);
-    add ("symphonyTwist", "Symphony Twist", 0, 1, 0.5f);
-    add ("symphonySection", "Symphony Section", 0, 1, 0.3f);
+    add ("symphonyLevel", "Twisted Strings Level", 0, 1, 0);
+    add ("symphonyTwist", "Twisted Strings Sinister", 0, 1, 0.3f);
     add ("ghostLevel", "Ghost Piano Level", 0, 1, 0);
     add ("ghostBreak", "Ghost Piano Break", 0, 1, 0.5f);
     add ("organLevel", "Organ Level", 0, 1, 0);
@@ -227,7 +230,7 @@ void DreadProcessor::pullParams()
     p.airLevel = get ("airLevel"); p.airMotion = get ("airMotion");
     p.pianoLevel = get ("pianoLevel"); p.pianoBreak = get ("pianoBreak");
     p.whisperLevel = get ("whisperLevel"); p.whisperDemon = get ("whisperDemon");
-    p.screamLevel = get ("screamLevel"); p.screamRasp = get ("screamRasp");
+    p.bellLevel = get ("bellLevel"); p.bellSinister = get ("bellSinister");
     p.cutoff = get ("cutoff"); p.resonance = get ("resonance"); p.envAmount = get ("envAmount");
     p.attack = get ("attack"); p.decay = get ("decay"); p.sustain = get ("sustain"); p.release = get ("release");
     p.dread = get ("dread"); p.torment = get ("torment");
@@ -237,7 +240,7 @@ void DreadProcessor::pullParams()
     p.distDrive = get ("distDrive"); p.distTone = get ("distTone"); p.distMix = get ("distMix"); p.distType = (int) get ("distType");
     p.delayMix = get ("delayMix"); p.delayFeedback = get ("delayFeedback"); p.delayTime = (int) get ("delayTime");
     p.reverbMix = get ("reverbMix"); p.reverbSize = get ("reverbSize");
-    p.symphonyLevel = get ("symphonyLevel"); p.symphonyTwist = get ("symphonyTwist"); p.symphonySection = get ("symphonySection");
+    p.symphonyLevel = get ("symphonyLevel"); p.symphonyTwist = get ("symphonyTwist");
     p.ghostLevel = get ("ghostLevel"); p.ghostBreak = get ("ghostBreak");
     p.organLevel = get ("organLevel"); p.organDement = get ("organDement"); p.organStops = get ("organStops");
     p.heartLevel = get ("heartLevel"); p.heartRate = get ("heartRate"); p.heartPanic = get ("heartPanic");

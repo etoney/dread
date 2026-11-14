@@ -10,7 +10,7 @@ int main(int argc,char**argv){
   for(float brk: {0.3f,0.8f}){ dread::Engine e; e.prepare(SR,B); auto&p=e.params; base(p); p.pianoLevel=1; p.pianoBreak=brk; p.wobble=0.2f;
     int mel[]={57,60,64,63,59,56,52,53}; float d[]={0.5f,0.5f,0.8f,0.45f,0.45f,0.8f,0.5f,1.1f};
     for(int k=0;k<8;k++){ e.noteOn(mel[k],0.75f); if(k%4==0) e.noteOn(33,0.6f); run(e,d[k]); e.noteOff(mel[k]); e.noteOff(33);} run(e,1.2f); }
-  { dread::Engine e; e.prepare(SR,B); auto&p=e.params; base(p); p.screamLevel=1; p.screamRasp=0.6f; p.attack=0.01f; p.release=0.5f; p.reverbMix=0.45f;
+  { dread::Engine e; e.prepare(SR,B); auto&p=e.params; base(p); p.bellLevel=1; p.bellSinister=0.6f; p.attack=0.01f; p.release=0.5f; p.reverbMix=0.45f;
     e.noteOn(67,1.0f); run(e,2.2f); e.noteOff(67); run(e,0.7f); e.noteOn(62,0.9f); e.noteOn(69,1.0f); run(e,2.0f); e.allNotesOff(); run(e,1.2f); }
   { dread::Engine e; e.prepare(SR,B); auto&p=e.params; base(p); p.chainLevel=1; p.chainRattle=0.45f; p.chainRust=0.8f; e.noteOn(43,0.9f); run(e,3.5f); e.allNotesOff(); run(e,0.8f); }
   { dread::Engine e; e.prepare(SR,B); auto&p=e.params; base(p); p.airLevel=1; p.airMotion=0.5f; p.attack=0.8f; p.reverbMix=0.2f; e.noteOn(55,0.8f); run(e,4.5f); e.allNotesOff(); run(e,1.0f); }

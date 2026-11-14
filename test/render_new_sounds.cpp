@@ -20,7 +20,7 @@ int main(int argc,char**argv){
     p.attack=0.3f; p.sustain=1; p.release=2.5f; p.cutoff=12000; p.envAmount=0; p.reverbMix=0.45f; p.delayMix=0.25f; p.wobble=0.2f;
     e.noteOn(40,0.9f); e.noteOn(52,0.7f); run(e,6.0f); e.allNotesOff(); run(e,2.0f); }
   { dread::Engine e; e.prepare(SR,B); auto&p=e.params; // Screams
-    p.droneLevel=p.metalLevel=p.airLevel=0; p.screamLevel=1; p.screamRasp=0.5f; p.dread=0.2f; p.torment=0.2f; p.attack=0.04f; p.sustain=1;
+    p.droneLevel=p.metalLevel=p.airLevel=0; p.bellLevel=1; p.bellSinister=0.5f; p.dread=0.2f; p.torment=0.2f; p.attack=0.04f; p.sustain=1;
     p.release=0.6f; p.cutoff=14000; p.envAmount=0; p.reverbMix=0.5f; p.reverbSize=0.8f; p.delayMix=0.1f;
     e.noteOn(72,1.0f); run(e,1.6f); e.noteOff(72); run(e,0.8f);
     e.noteOn(67,0.9f); e.noteOn(74,0.9f); e.noteOn(79,1.0f); run(e,2.2f); e.allNotesOff(); run(e,2.5f); }
