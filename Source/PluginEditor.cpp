@@ -186,23 +186,29 @@ static void drawDreadEmblem (juce::Graphics& g, juce::Rectangle<float> r)
     g.reduceClipRegion (clip);
     g.setGradientFill (juce::ColourGradient (juce::Colour (0xff3a0e08), c.x, inner.getY(), juce::Colour (0xff0a0605), c.x, inner.getBottom(), false));
     g.fillEllipse (inner);
-    // three claw gouges: dark cut, glowing blood edge, drips
+    // three claw slashes: tapered gouges swiped top-right to bottom-left, glowing blood edges
     const float w = inner.getWidth(), h = inner.getHeight(), x0 = inner.getX(), y0 = inner.getY();
     for (int k = 0; k < 3; ++k)
     {
-        const float off = ((float) k - 1.0f) * 0.22f;
-        juce::Path cut;
-        cut.startNewSubPath (x0 + w * (0.30f + off), y0 + h * 0.12f);
-        cut.quadraticTo (x0 + w * (0.46f + off), y0 + h * 0.5f, x0 + w * (0.62f + off), y0 + h * 0.9f);
-        juce::Path glow; juce::PathStrokeType (w * 0.13f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded).createStrokedPath (glow, cut);
-        juce::DropShadow (pal::signalHot.withAlpha (0.5f), (int) (w * 0.08f), {}).drawForPath (g, glow);
-        g.setColour (pal::signal); g.fillPath (glow);
-        juce::Path core; juce::PathStrokeType (w * 0.05f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded).createStrokedPath (core, cut);
+        const float off = ((float) k - 1.0f) * 0.2f;
+        const juce::Point<float> a (x0 + w * (0.70f + off), y0 + h * (0.12f + 0.03f * (float) k));
+        const juce::Point<float> b (x0 + w * (0.30f + off), y0 + h * (0.88f - 0.03f * (float) k));
+        const juce::Point<float> mid ((a.x + b.x) * 0.5f + w * 0.05f, (a.y + b.y) * 0.5f);
+        const float half = w * 0.045f;                                    // widest in the middle, sharp at both ends
+        const auto n = juce::Point<float> (b.y - a.y, a.x - b.x) / a.getDistanceFrom (b);
+        juce::Path slash;
+        slash.startNewSubPath (a);
+        slash.quadraticTo (mid + n * half * 2.0f, b);
+        slash.quadraticTo (mid - n * half * 2.0f, a);
+        slash.closeSubPath();
+        juce::DropShadow (pal::signalHot.withAlpha (0.55f), (int) (w * 0.07f), {}).drawForPath (g, slash);
+        g.setColour (pal::signal); g.fillPath (slash);
+        juce::Path core;
+        core.startNewSubPath (a);
+        core.quadraticTo (mid + n * half * 0.8f, b);
+        core.quadraticTo (mid - n * half * 0.8f, a);
+        core.closeSubPath();
         g.setColour (juce::Colour (0xff1a0402)); g.fillPath (core);
-        const float dx = x0 + w * (0.47f + off), dy = y0 + h * (0.55f + 0.08f * (float) k);
-        g.setColour (pal::signal.darker (0.2f));
-        g.fillRoundedRectangle (dx - w * 0.018f, dy, w * 0.036f, h * (0.12f + 0.05f * (float) k), w * 0.018f);
-        g.fillEllipse (dx - w * 0.028f, dy + h * (0.11f + 0.05f * (float) k), w * 0.056f, w * 0.056f);
     }
 }
 
