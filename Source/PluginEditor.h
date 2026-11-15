@@ -67,7 +67,7 @@ private:
     std::array<std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment>, 16> stepAtts;
     juce::ToggleButton stingZone { "Sting zone C6+" };
     std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> stingZoneAtt;
-    juce::Rectangle<int> gateArea, logoArea, badgeArea;
+    juce::Rectangle<int> gateArea, logoArea, badgeArea, emblemArea, crestArea, presetArea, stripeArea;
     juce::MidiKeyboardComponent keyboard;
     juce::Image backdrop, logoImage;
     float flicker = 0.0f;

@@ -97,6 +97,116 @@ inline juce::Image distressedText (const juce::String& text, int w, int h, juce:
 } // namespace tex
 
 //==============================================================================
+// The Castle Danger crest: a castle silhouette under a blood moon, on a riveted iron medallion.
+static void drawCastleCrest (juce::Graphics& g, juce::Rectangle<float> r)
+{
+    const auto c = r.getCentre();
+    const float R = std::min (r.getWidth(), r.getHeight()) * 0.5f;
+
+    // iron ring
+    g.setColour (juce::Colours::black.withAlpha (0.6f)); g.fillEllipse (r.translated (1.5f, 2.5f));
+    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff6a5a4c), c.x - R * 0.6f, c.y - R * 0.8f, juce::Colour (0xff1a1410), c.x + R, c.y + R, true));
+    g.fillEllipse (r);
+    g.setColour (pal::rust.withAlpha (0.55f)); g.drawEllipse (r.reduced (1.0f), 1.6f);
+    for (int i = 0; i < 8; ++i)
+    {
+        const float a = (float) i / 8.0f * juce::MathConstants<float>::twoPi + 0.39f;
+        const float rx = c.x + std::cos (a) * R * 0.88f, ry = c.y + std::sin (a) * R * 0.88f;
+        g.setColour (juce::Colour (0xff8a7a68)); g.fillEllipse (rx - 1.8f, ry - 1.8f, 3.6f, 3.6f);
+        g.setColour (juce::Colours::black.withAlpha (0.5f)); g.drawEllipse (rx - 1.8f, ry - 1.8f, 3.6f, 3.6f, 0.6f);
+    }
+
+    // night sky + blood moon
+    const auto inner = r.reduced (R * 0.2f);
+    const float ir = inner.getWidth() * 0.5f;
+    juce::Graphics::ScopedSaveState ss (g);
+    juce::Path clip; clip.addEllipse (inner);
+    g.reduceClipRegion (clip);
+    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff2a0c08), c.x, inner.getY(), juce::Colour (0xff080505), c.x, inner.getBottom(), false));
+    g.fillEllipse (inner);
+    const juce::Rectangle<float> moon (c.x - ir * 0.55f, inner.getY() + ir * 0.12f, ir * 1.1f, ir * 1.1f);
+    juce::DropShadow (pal::signalHot.withAlpha (0.55f), (int) (ir * 0.45f), {}).drawForPath (g, [&] { juce::Path p; p.addEllipse (moon); return p; }());
+    g.setGradientFill (juce::ColourGradient (juce::Colour (0xffff7a4a), moon.getX() + moon.getWidth() * 0.35f, moon.getY() + moon.getHeight() * 0.3f,
+                                             juce::Colour (0xff8a1408), moon.getRight(), moon.getBottom(), true));
+    g.fillEllipse (moon);
+    g.setColour (juce::Colour (0x40400000));
+    g.fillEllipse (moon.getX() + moon.getWidth() * 0.55f, moon.getY() + moon.getHeight() * 0.25f, moon.getWidth() * 0.16f, moon.getWidth() * 0.16f);
+    g.fillEllipse (moon.getX() + moon.getWidth() * 0.25f, moon.getY() + moon.getHeight() * 0.55f, moon.getWidth() * 0.12f, moon.getWidth() * 0.12f);
+
+    // castle silhouette
+    const float x0 = inner.getX(), y0 = inner.getY(), w = inner.getWidth(), h = inner.getHeight();
+    auto X = [&] (float f) { return x0 + f * w; };
+    auto Y = [&] (float f) { return y0 + f * h; };
+    juce::Path castle;
+    auto tower = [&] (float l, float rgt, float top, int merlons)
+    {
+        castle.addRectangle (X (l), Y (top), X (rgt) - X (l), Y (1.05f) - Y (top));
+        const float mw = (rgt - l) / (float) (merlons * 2 - 1);
+        for (int i = 0; i < merlons; ++i)
+            castle.addRectangle (X (l + (float) i * 2.0f * mw), Y (top - 0.06f), X (l + mw) - X (l), Y (0.06f) - Y (0.0f) + 0.5f);
+    };
+    tower (0.08f, 0.30f, 0.50f, 3);           // left tower
+    tower (0.70f, 0.92f, 0.50f, 3);           // right tower
+    tower (0.38f, 0.62f, 0.36f, 3);           // keep
+    tower (0.30f, 0.70f, 0.64f, 5);           // curtain wall
+    castle.addTriangle (X (0.08f), Y (0.44f), X (0.19f), Y (0.27f), X (0.30f), Y (0.44f));   // spires
+    castle.addTriangle (X (0.70f), Y (0.44f), X (0.81f), Y (0.27f), X (0.92f), Y (0.44f));
+    castle.setUsingNonZeroWinding (true);
+    g.setColour (juce::Colour (0xff070505)); g.fillPath (castle);
+    // gate + lit windows
+    juce::Path gate;
+    gate.addRectangle (X (0.44f), Y (0.84f), X (0.56f) - X (0.44f), Y (0.2f) - Y (0.0f));
+    gate.addEllipse (X (0.44f), Y (0.79f), X (0.56f) - X (0.44f), Y (0.1f) - Y (0.0f));
+    g.setColour (juce::Colour (0xff2a0c06)); g.fillPath (gate);
+    g.setColour (pal::signalHot.withAlpha (0.9f));
+    for (auto p : { juce::Point<float> (0.19f, 0.62f), { 0.81f, 0.62f }, { 0.5f, 0.5f } })
+        g.fillRect (X (p.x) - w * 0.018f, Y (p.y), w * 0.036f, h * 0.07f);
+}
+
+
+// DREAD's emblem: three bloody claw marks gouged into a riveted iron medallion.
+static void drawDreadEmblem (juce::Graphics& g, juce::Rectangle<float> r)
+{
+    const auto c = r.getCentre();
+    const float R = std::min (r.getWidth(), r.getHeight()) * 0.5f;
+    g.setColour (juce::Colours::black.withAlpha (0.6f)); g.fillEllipse (r.translated (1.5f, 2.5f));
+    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff6a5a4c), c.x - R * 0.6f, c.y - R * 0.8f, juce::Colour (0xff1a1410), c.x + R, c.y + R, true));
+    g.fillEllipse (r);
+    g.setColour (pal::rust.withAlpha (0.55f)); g.drawEllipse (r.reduced (1.0f), 1.6f);
+    for (int i = 0; i < 8; ++i)
+    {
+        const float a = (float) i / 8.0f * juce::MathConstants<float>::twoPi + 0.39f;
+        const float rx = c.x + std::cos (a) * R * 0.88f, ry = c.y + std::sin (a) * R * 0.88f;
+        g.setColour (juce::Colour (0xff8a7a68)); g.fillEllipse (rx - 1.8f, ry - 1.8f, 3.6f, 3.6f);
+        g.setColour (juce::Colours::black.withAlpha (0.5f)); g.drawEllipse (rx - 1.8f, ry - 1.8f, 3.6f, 3.6f, 0.6f);
+    }
+    const auto inner = r.reduced (R * 0.2f);
+    juce::Graphics::ScopedSaveState ss (g);
+    juce::Path clip; clip.addEllipse (inner);
+    g.reduceClipRegion (clip);
+    g.setGradientFill (juce::ColourGradient (juce::Colour (0xff3a0e08), c.x, inner.getY(), juce::Colour (0xff0a0605), c.x, inner.getBottom(), false));
+    g.fillEllipse (inner);
+    // three claw gouges: dark cut, glowing blood edge, drips
+    const float w = inner.getWidth(), h = inner.getHeight(), x0 = inner.getX(), y0 = inner.getY();
+    for (int k = 0; k < 3; ++k)
+    {
+        const float off = ((float) k - 1.0f) * 0.22f;
+        juce::Path cut;
+        cut.startNewSubPath (x0 + w * (0.30f + off), y0 + h * 0.12f);
+        cut.quadraticTo (x0 + w * (0.46f + off), y0 + h * 0.5f, x0 + w * (0.62f + off), y0 + h * 0.9f);
+        juce::Path glow; juce::PathStrokeType (w * 0.13f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded).createStrokedPath (glow, cut);
+        juce::DropShadow (pal::signalHot.withAlpha (0.5f), (int) (w * 0.08f), {}).drawForPath (g, glow);
+        g.setColour (pal::signal); g.fillPath (glow);
+        juce::Path core; juce::PathStrokeType (w * 0.05f, juce::PathStrokeType::curved, juce::PathStrokeType::rounded).createStrokedPath (core, cut);
+        g.setColour (juce::Colour (0xff1a0402)); g.fillPath (core);
+        const float dx = x0 + w * (0.47f + off), dy = y0 + h * (0.55f + 0.08f * (float) k);
+        g.setColour (pal::signal.darker (0.2f));
+        g.fillRoundedRectangle (dx - w * 0.018f, dy, w * 0.036f, h * (0.12f + 0.05f * (float) k), w * 0.018f);
+        g.fillEllipse (dx - w * 0.028f, dy + h * (0.11f + 0.05f * (float) k), w * 0.056f, w * 0.056f);
+    }
+}
+
+//==============================================================================
 DreadLookAndFeel::DreadLookAndFeel()
 {
     setColour (juce::Slider::textBoxTextColourId, pal::paintDim);
@@ -351,7 +461,7 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     keyboard.setColour (juce::MidiKeyboardComponent::upDownButtonArrowColourId, pal::paint);
     addAndMakeVisible (keyboard);
 
-    setSize (1120, 860);
+    setSize (1120, 896);
     startTimerHz (20);
 }
 
@@ -505,20 +615,23 @@ void DreadEditor::layoutSection (Section& s, juce::Rectangle<int> area)
 
 void DreadEditor::resized()
 {
+    // header, laid out like Chop Shop / Dominatrix: [emblem + title] [Castle Danger plate] [preset block]
+    const int W = getWidth();
+    emblemArea = { 18, 12, 86, 86 };
+    logoArea   = { 116, 10, 330, 66 };
+    presetArea = { W - 18 - 262, 14, 262, 86 };
+    presetBox.setBounds (presetArea.getX(), 36, presetArea.getWidth(), 26);
+    hellButton.setBounds (presetArea.getX(), 70, 150, 26);
+    saveButton.setBounds (presetArea.getX() + 156, 70, presetArea.getWidth() - 156, 26);
+    {
+        const int left = logoArea.getRight() + 16, right = presetArea.getX() - 18;
+        const int bw = juce::jmin (300, right - left);
+        badgeArea = { (left + right - bw) / 2, 14, bw, 86 };
+        crestArea = { badgeArea.getX() + 8, 19, 76, 76 };
+    }
+    stripeArea = { 0, 110, W, 10 };
     auto r = getLocalBounds().reduced (14);
-    auto header = r.removeFromTop (60);
-    logoArea  = header.withWidth (300);
-    // right-hand group, one row, all the same height: [RAISE HELL] [preset menu] [SAVE]
-    auto group = header.removeFromRight (398);
-    const int rowY = header.getCentreY() - 14;
-    saveButton.setBounds (group.removeFromRight (58).withY (rowY).withHeight (28));
-    group.removeFromRight (6);
-    presetBox.setBounds (group.removeFromRight (210).withY (rowY).withHeight (28));
-    group.removeFromRight (8);
-    hellButton.setBounds (group.removeFromRight (116).withY (rowY).withHeight (28));
-    // badge centred in the space between the logo and that group
-    const int badgeLeft = logoArea.getRight() + 8, badgeRight = hellButton.getX() - 12;
-    badgeArea = juce::Rectangle<int> (0, 0, juce::jmin (390, badgeRight - badgeLeft), 52).withCentre ({ (badgeLeft + badgeRight) / 2, header.getCentreY() });
+    r.removeFromTop (114);
 
 
     keyboard.setBounds (r.removeFromBottom (60));
@@ -725,23 +838,56 @@ void DreadEditor::buildBackdrop()
     g.setColour (juce::Colours::black.withAlpha (0.7f)); g.drawRect (kb, 2.0f);
     rivet (kb.getX() - 4, kb.getCentreY(), 3.5f); rivet (kb.getRight() + 4, kb.getCentreY(), 3.5f);
 
-    // CASTLE DANGER MC badge
+    // riveted strip under the header (same family look as Dominatrix)
+    {
+        const auto st = stripeArea.toFloat();
+        g.setGradientFill (juce::ColourGradient (juce::Colour (0xff2a2320), 0, st.getY(), juce::Colour (0xff0e0b09), 0, st.getBottom(), false));
+        g.fillRect (st);
+        g.setColour (juce::Colours::black.withAlpha (0.75f));
+        g.drawLine (0, st.getY(), (float) W, st.getY(), 1.5f); g.drawLine (0, st.getBottom(), (float) W, st.getBottom(), 1.5f);
+        for (float x = 14.0f; x < (float) W - 8.0f; x += 30.0f) rivet (x, st.getCentreY(), 3.0f);
+    }
+
+    // emblem: DREAD's claw-marked medallion
+    drawDreadEmblem (g, emblemArea.toFloat());
+
+    // CASTLE DANGER MUSIC COMPANY plate with the castle crest (same as Chop Shop / Dominatrix)
     plateFrame (badge, false);
-    g.setColour (pal::paint.withAlpha (0.25f)); g.drawRect (badge.reduced (5.0f), 1.0f);
-    auto brand = tex::distressedText ("CASTLE DANGER MUSIC COMPANY", badgeArea.getWidth() - 30, badgeArea.getHeight() - 8, tex::stencil (23.0f),
-                                      juce::Colour (0xffeadfc4), juce::Justification::centred, scale, 0.24f, 4242, 0.14f);
-    g.setColour (juce::Colours::black);
-    g.setOpacity (0.7f); g.drawImage (brand, badge.reduced (15.0f, 4.0f).translated (1.5f, 2.0f));
-    g.setOpacity (1.0f); g.drawImage (brand, badge.reduced (15.0f, 4.0f));
+    g.setColour (pal::paint.withAlpha (0.22f)); g.drawRect (badge.reduced (5.0f), 1.0f);
+    drawCastleCrest (g, crestArea.toFloat());
+    {
+        const float tx = (float) crestArea.getRight() + 8.0f, tw = badge.getRight() - tx - 10.0f;
+        auto l1 = tex::distressedText ("CASTLE DANGER", (int) tw, 28, tex::stencil (25.0f), juce::Colour (0xffeadfc4), juce::Justification::centredLeft, scale, 0.24f, 4242, 0.08f);
+        auto l2 = tex::distressedText ("MUSIC COMPANY", (int) tw, 20, tex::stencil (17.0f), pal::rustLight, juce::Justification::centredLeft, scale, 0.24f, 4343, 0.2f);
+        auto l3 = tex::distressedText ("WE MAKE MUSIC", (int) tw, 14, tex::plainBold (9.0f), pal::paintDim, juce::Justification::centredLeft, scale, 0.15f, 4444, 0.3f);
+        g.setColour (juce::Colours::black);
+        g.setOpacity (0.7f); g.drawImage (l1, juce::Rectangle<float> (tx + 1.5f, badge.getY() + 13.0f, tw, 28.0f));
+        g.setOpacity (1.0f); g.drawImage (l1, juce::Rectangle<float> (tx, badge.getY() + 11.0f, tw, 28.0f));
+        g.setOpacity (0.7f); g.drawImage (l2, juce::Rectangle<float> (tx + 1.5f, badge.getY() + 40.0f, tw, 20.0f));
+        g.setOpacity (1.0f); g.drawImage (l2, juce::Rectangle<float> (tx, badge.getY() + 38.0f, tw, 20.0f));
+        g.drawImage (l3, juce::Rectangle<float> (tx + 1.0f, badge.getY() + 60.0f, tw, 14.0f));
+    }
 
-    // stamped version / subtitle under the logo
+    // stamped subtitle under the title
     auto sub = tex::distressedText ("HORROR TEXTURE DESIGNER  //  V" + juce::String (JucePlugin_VersionString),
-                                    300, 14, tex::plainBold (10.0f), pal::paintDim, juce::Justification::centredLeft, scale, 0.15f, 99, 0.1f);
-    g.drawImage (sub, juce::Rectangle<float> ((float) logoArea.getX() + 4, (float) logoArea.getBottom() - 14, 300.0f, 14.0f));
+                                    330, 14, tex::plainBold (10.5f), pal::paintDim, juce::Justification::centredLeft, scale, 0.15f, 99, 0.14f);
+    g.drawImage (sub, juce::Rectangle<float> ((float) logoArea.getX() + 2, 80.0f, 330.0f, 14.0f));
 
-    // logo is drawn live (it flickers) from its own distressed image
-    logoImage = tex::distressedText ("DREAD", 260, 50, tex::stencil (52.0f), pal::signal, juce::Justification::centredLeft,
-                                     scale, 0.3f, 666, 0.22f);
+    // PRESET label above the menu
+    auto pl = tex::distressedText ("PRESET", 120, 16, tex::stencil (14.0f), pal::paint, juce::Justification::centredLeft, scale, 0.2f, 7, 0.15f);
+    g.drawImage (pl, juce::Rectangle<float> ((float) presetArea.getX() + 2, (float) presetArea.getY() + 2, 120.0f, 16.0f));
+
+    // title: big distressed DREAD in blood red (drawn live so it can flicker)
+    {
+        const int lw = logoArea.getWidth(), lh = logoArea.getHeight();
+        logoImage = juce::Image (juce::Image::ARGB, (int) ((float) lw * scale), (int) ((float) lh * scale), true);
+        juce::Graphics lg (logoImage);
+        lg.addTransform (juce::AffineTransform::scale (scale));
+        lg.setFont (tex::stencil (66.0f).withExtraKerningFactor (0.08f));
+        lg.setColour (pal::signal);
+        lg.drawText ("DREAD", 0, 0, lw, lh, juce::Justification::centredLeft, false);
+        tex::distress (logoImage, scale, 0.3f, 666);
+    }
 }
 
 void DreadEditor::paint (juce::Graphics& g)
@@ -753,9 +899,9 @@ void DreadEditor::paint (juce::Graphics& g)
     const float alpha = juce::jlimit (0.3f, 1.0f, 1.0f - flicker * dreadAmt * 0.7f);
     if (logoImage.isValid())
     {
-        const auto la = juce::Rectangle<float> ((float) logoArea.getX() + 4, (float) logoArea.getY() - 2, 260.0f, 50.0f);
+        const auto la = logoArea.toFloat();
         g.setColour (juce::Colours::black);
-        g.setOpacity (0.6f);  g.drawImage (logoImage, la.translated (2.0f, 3.0f));
+        g.setOpacity (0.65f); g.drawImage (logoImage, la.translated (2.5f, 3.5f));
         g.setOpacity (alpha); g.drawImage (logoImage, la);
         g.setOpacity (1.0f);
     }
@@ -791,5 +937,5 @@ void DreadEditor::timerCallback()
         presetBox.setSelectedId (lastPresetId, juce::dontSendNotification);
         presetBox.setItemEnabled (kDeleteId, proc.isUserPreset (proc.getCurrentProgram()));
     }
-    if (std::abs (flicker - before) > 0.01f) repaint (logoArea.withHeight (54).withWidth (270));
+    if (std::abs (flicker - before) > 0.01f) repaint (logoArea.expanded (6));
 }
