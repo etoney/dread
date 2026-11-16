@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.22)
-project(DREAD VERSION 1.11.1)
+# Must come BEFORE project(), or CMake ignores them: universal (Apple Silicon + Intel), macOS 11+
+set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "")
+set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "")
+project(DREAD VERSION 1.11.2)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "")
-set(CMAKE_OSX_ARCHITECTURES "arm64;x86_64" CACHE STRING "")
 
 include(FetchContent)
 FetchContent_Declare(JUCE
