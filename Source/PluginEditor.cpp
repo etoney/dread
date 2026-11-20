@@ -863,7 +863,14 @@ void TormentEditor::buildBackdrop()
     drawCastleCrest (g, crestArea.toFloat());
     {
         const float tx = (float) crestArea.getRight() + 8.0f, tw = badge.getRight() - tx - 10.0f;
-        auto l1 = tex::distressedText ("CASTLE DANGER", (int) tw, 28, tex::stencil (25.0f), juce::Colour (0xffeadfc4), juce::Justification::centredLeft, scale, 0.24f, 4242, 0.08f);
+        // the name always fits the plate: shrink the stencil if CASTLE DANGER would run past its edge
+        auto fitTo = [] (juce::Font f, float kern, const juce::String& t, float w)
+        {
+            juce::GlyphArrangement ga; ga.addLineOfText (f.withExtraKerningFactor (kern), t, 0, 0);
+            const float tw0 = ga.getBoundingBox (0, -1, true).getWidth();
+            return tw0 > w ? f.withHeight (f.getHeight() * w / tw0) : f;
+        };
+        auto l1 = tex::distressedText ("CASTLE DANGER", (int) tw, 28, fitTo (tex::stencil (25.0f), 0.08f, "CASTLE DANGER", tw - 4.0f), juce::Colour (0xffeadfc4), juce::Justification::centredLeft, scale, 0.24f, 4242, 0.08f);
         auto l2 = tex::distressedText ("MUSIC COMPANY", (int) tw, 20, tex::stencil (17.0f), pal::rustLight, juce::Justification::centredLeft, scale, 0.24f, 4343, 0.2f);
         auto l3 = tex::distressedText ("WE MAKE MUSIC", (int) tw, 14, tex::plainBold (9.0f), pal::paintDim, juce::Justification::centredLeft, scale, 0.15f, 4444, 0.3f);
         g.setColour (juce::Colours::black);
