@@ -183,7 +183,7 @@ inline HellRoll rollHell (uint32_t seed, int avoidCharacter = -1)
 
     // ---- keep it musical, and keep headroom so later knob changes are clearly audible
     f.torment   = std::min (f.torment, 0.5f);
-    f.dread     = std::min (f.dread, 0.55f);     // DREAD stays moderate so the effect knobs (not the macro) carry the character
+    f.dread     = std::min (f.dread, 0.55f);     // TORMENT (the macro) stays moderate so the effect knobs (not the macro) carry the character
     f.distDrive = std::min (f.distDrive, 0.8f);
     if (f.distDrive > 0.5f) f.distTone = std::min (f.distTone, 0.65f);
     if (f.torment > 0.3f && f.distDrive > 0.45f) { f.distDrive *= 0.8f; f.torment *= 0.75f; }   // don't stack saturation

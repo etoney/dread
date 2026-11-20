@@ -167,8 +167,8 @@ APVTS::ParameterLayout TormentProcessor::createLayout()
     add ("sustain", "Sustain", 0, 1, 0.8f);
     add ("release", "Release", 0.01f, 15, 3.0f, 2.0f, "s");
 
-    add ("dread", "DREAD", 0, 1, 0.3f);
-    add ("torment", "TORMENT", 0, 1, 0.15f);
+    add ("dread", "TORMENT", 0, 1, 0.3f);
+    add ("torment", "CRUSH", 0, 1, 0.15f);
 
     add ("ringMix", "Ring Mix", 0, 1, 0);
     add ("ringFreq", "Ring Freq", 5, 2000, 120, 150, "Hz");

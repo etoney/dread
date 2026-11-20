@@ -1408,7 +1408,7 @@ public:
             l = l * (1.0f - ringMix) + l * car * ringMix * 1.4f;
             r = r * (1.0f - ringMix) + r * car * ringMix * 1.4f;
 
-            // Torment: body boost + saturation
+            // Crush: body boost + saturation
             if (p.torment > 0.001f)
             {
                 l += bodyL.lp (l) * p.torment * 1.5f; r += bodyR.lp (r) * p.torment * 1.5f;

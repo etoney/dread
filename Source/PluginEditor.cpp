@@ -401,7 +401,7 @@ TormentEditor::TormentEditor (TormentProcessor& p)
     sec ("DRONE",  { makeKnob ("droneLevel", "Level"), makeKnob ("droneDetune", "Detune"), makeKnob ("droneFold", "Fold"), makeKnob ("droneSub", "Sub") });
     sec ("METAL",  { makeKnob ("metalLevel", "Level"), makeKnob ("metalResonance", "Bow"), makeKnob ("metalTone", "Tone") });
     sec ("AIR",    { makeKnob ("airLevel", "Level"), makeKnob ("airMotion", "Motion") });
-    sec ("MACROS", { makeKnob ("dread", "DREAD", true), makeKnob ("torment", "TORMENT", true) });
+    sec ("MACROS", { makeKnob ("dread", "TORMENT", true), makeKnob ("torment", "CRUSH", true) });
     sec ("FILTER / AMP", { makeKnob ("cutoff", "Cutoff"), makeKnob ("resonance", "Reso"), makeKnob ("envAmount", "Env"),
                            makeKnob ("attack", "Attack"), makeKnob ("decay", "Decay"), makeKnob ("sustain", "Sustain"), makeKnob ("release", "Release") });
     sec ("FX", { makeKnob ("ringMix", "Ring"), makeKnob ("ringFreq", "Ring Hz"), makeKnob ("wobble", "Wobble"),

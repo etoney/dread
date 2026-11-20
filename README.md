@@ -16,15 +16,15 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 | **Demented Pipe Organ** | Additive pipe ranks (16' to mixtures and reeds). *Stops* = soft flute → full organ; *Dement* = ranks out of tune with each other, tremulant, wind-starved wobble, sagging pitch, a ciphering wrong pipe |
 | **Heartbeat** | Lub-dub heartbeat while a key is held. *Rate* in BPM; *Panic* speeds it up over time, makes it irregular and pounding |
 | **Rusty Chains** | Link-on-link impacts in little cascades through three banks of metal resonators, plus rusty grinding and creaks. *Rattle* = slow clinks → frantic shaking; *Rust* = duller links + more grinding |
-| **Sting zone** | Notes **C6 and up** fire one-shot jumpscares. *Sting Type*: Slam, Shriek Stabs, Sub Boom, Metal Crash. Stings skip Torment/Distortion/Gate so they hit at full force |
+| **Sting zone** | Notes **C6 and up** fire one-shot jumpscares. *Sting Type*: Slam, Shriek Stabs, Sub Boom, Metal Crash. Stings skip Crush/Distortion/Gate so they hit at full force |
 
 **Macros**
-- **DREAD**: one knob that raises pitch drift, darkens the filter, adds ring mod, sub, whisper, wobble and reverb size together.
-- **TORMENT**: low-end body boost plus heavy saturation.
+- **TORMENT**: one knob that raises pitch drift, darkens the filter, adds ring mod, sub, whisper, wobble and reverb size together.
+- **CRUSH**: low-end body boost plus heavy saturation.
 
 **RAISE HELL** button: re-rolls every effect within one of 11 characters (often blended with a second, sometimes with a wildcard effect pushed hard), never repeating the last character, with rules that keep loudness, wet level and distortion musical and leave every knob live as a starting point. Sources, envelope, stings and output are untouched.
 
-**FX chain:** Ring mod → Torment → Distortion (Tube, Tape, Fuzz, Wavefold, Bitcrush, Blown Speaker, with Drive / Tone / Mix) → 16-step tempo-synced Gate → Wobble (tape warble) → Ping-pong delay → 8-line FDN reverb (up to ~13 s tails) → Output.
+**FX chain:** Ring mod → Crush → Distortion (Tube, Tape, Fuzz, Wavefold, Bitcrush, Blown Speaker, with Drive / Tone / Mix) → 16-step tempo-synced Gate → Wobble (tape warble) → Ping-pong delay → 8-line FDN reverb (up to ~13 s tails) → Output.
 
 23 factory presets: Init (Clean), Unease, Basement Hum, Bowed Morgue, Whispers Behind You, Heartbeat Gate, Asylum Pulse, Total Dread, Shock Stabs, Broken Piano, Demonic Whispers, Haunted Parlor, Rusty Chains, Dungeon, Twisted Strings, Funeral Bells, Hell's Bells, Church Bells (Clean), Satanic Strings, Ghost Piano, Demented Organ, Heartbeat, Panic Attack.
 
