@@ -1,4 +1,4 @@
-name: Build DREAD
+name: Build Torment
 
 on:
   push:
@@ -27,17 +27,17 @@ jobs:
             cmake -B build -DCMAKE_BUILD_TYPE=Release
           fi
       - name: Build
-        run: cmake --build build --config Release --target DREAD_VST3 DREAD_Standalone
+        run: cmake --build build --config Release --target Torment_VST3 Torment_Standalone
       - name: Build AU (macOS)
         if: runner.os == 'macOS'
-        run: cmake --build build --config Release --target DREAD_AU
+        run: cmake --build build --config Release --target Torment_AU
       - name: GUI snapshot (macOS)
         if: runner.os == 'macOS'
         continue-on-error: true
         timeout-minutes: 10
         run: |
-          cmake --build build --config Release --target DreadSnapshot
-          "$(find build -type f -name DreadSnapshot -perm -u+x | head -1)" "$PWD/gui.png"
+          cmake --build build --config Release --target TormentSnapshot
+          "$(find build -type f -name TormentSnapshot -perm -u+x | head -1)" "$PWD/gui.png"
           mkdir -p /tmp/shot && cp gui*.png /tmp/shot/
           cd /tmp/shot && git init -q -b screenshots && git add -A
           git -c user.name=ci -c user.email=ci@users.noreply.github.com commit -qm "GUI snapshot for ${GITHUB_SHA}"
@@ -59,20 +59,20 @@ jobs:
       - name: Package release zip (same layout as the site downloads)
         shell: bash
         run: |
-          VER=$(sed -n 's/^project(DREAD VERSION \([0-9.]*\)).*/\1/p' CMakeLists.txt)
+          VER=$(sed -n 's/^project(TORMENT VERSION \([0-9.]*\)).*/\1/p' CMakeLists.txt)
           OS=$([ "$RUNNER_OS" = "macOS" ] && echo macOS || echo Windows)
-          ZIP="DREAD-v${VER}-${OS}.zip"
-          R=build/DREAD_artefacts/Release
-          mkdir -p pkg/DREAD/VST3 pkg/DREAD/Standalone
-          cp readme.txt controls.txt LICENSE.txt THIRD-PARTY-NOTICES.txt pkg/DREAD/
-          cp -R "$R/VST3/DREAD.vst3" pkg/DREAD/VST3/
+          ZIP="Torment-v${VER}-${OS}.zip"
+          R=build/Torment_artefacts/Release
+          mkdir -p pkg/Torment/VST3 pkg/Torment/Standalone
+          cp readme.txt controls.txt LICENSE.txt THIRD-PARTY-NOTICES.txt pkg/Torment/
+          cp -R "$R/VST3/Torment.vst3" pkg/Torment/VST3/
           if [ "$OS" = "macOS" ]; then
-            mkdir -p pkg/DREAD/AU && cp -R "$R/AU/DREAD.component" pkg/DREAD/AU/
-            cp -R "$R/Standalone/DREAD.app" pkg/DREAD/Standalone/
-            (cd pkg && ditto -c -k --sequesterRsrc --keepParent DREAD "../$ZIP")
+            mkdir -p pkg/Torment/AU && cp -R "$R/AU/Torment.component" pkg/Torment/AU/
+            cp -R "$R/Standalone/Torment.app" pkg/Torment/Standalone/
+            (cd pkg && ditto -c -k --sequesterRsrc --keepParent Torment "../$ZIP")
           else
-            cp "$R/Standalone/DREAD.exe" pkg/DREAD/Standalone/
-            (cd pkg && 7z a -tzip -mx=9 "../$ZIP" DREAD > /dev/null)   # 7z writes forward-slash paths
+            cp "$R/Standalone/Torment.exe" pkg/Torment/Standalone/
+            (cd pkg && 7z a -tzip -mx=9 "../$ZIP" Torment > /dev/null)   # 7z writes forward-slash paths
           fi
           ls -la "$ZIP"
           BR="downloads-$(echo $OS | tr 'A-Z' 'a-z')"
@@ -81,12 +81,12 @@ jobs:
           git push -qf "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" "$BR"
       - uses: actions/upload-artifact@v4
         with:
-          name: DREAD-${{ runner.os }}
+          name: Torment-${{ runner.os }}
           path: |
             readme.txt
             controls.txt
             LICENSE.txt
             THIRD-PARTY-NOTICES.txt
-            build/DREAD_artefacts/Release/VST3
-            build/DREAD_artefacts/Release/AU
-            build/DREAD_artefacts/Release/Standalone
+            build/Torment_artefacts/Release/VST3
+            build/Torment_artefacts/Release/AU
+            build/Torment_artefacts/Release/Standalone

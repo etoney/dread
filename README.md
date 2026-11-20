@@ -1,6 +1,6 @@
-# DREAD — horror texture designer
+# Torment — horror texture designer
 
-An original synth for horror and thriller sound design (VST3 / AU / Standalone, built with JUCE), inspired by the *workflow* of Heavyocity's Psychosis: layered sources, one-knob "make it worse" macros, a rhythmic gate, and a jumpscare zone. It uses no samples. Every sound is synthesized.
+An original synth for horror and thriller sound design (VST3 / AU / Standalone, built with JUCE): layered sources, one-knob "make it worse" macros, a rhythmic gate, and a jumpscare zone. It uses no samples. Every sound is synthesized.
 
 ## Sound engine
 | Layer | What it is |
@@ -12,7 +12,7 @@ An original synth for horror and thriller sound design (VST3 / AU / Standalone, 
 | **Demon Whispers** | Two whisperers speaking random syllables with sibilants. *Demon* lowers the vocal tract and adds a period-doubled growl. Syllable speed follows Air *Motion* |
 | **Twisted Strings** | Bowed string section per note: 8 players with their own tuning, bow timing and late-blooming vibrato, stick-slip bow noise and a violin/viola/cello body resonance. *Sinister* = players drift and slide apart, wide slow vibrato, sul ponticello, cluster notes, bow tremolo, sagging pitch |
 | **Hell's Bells** | Modal church bell with real bell partial tuning (hum, prime, tierce, quint, nominal...), beating mode pairs and a clapper strike. *Sinister* = cursed tuning (minor 2nd, tritone, flat octaves), faster beating, doom sub-octave, darker strike, sinking pitch |
-| **Ghost Piano** | The original additive DREAD piano: glassy, bell-like stretched partials on detuned string pairs. *Break* = out-of-tune keys, missing overtones, rattle, dead keys |
+| **Ghost Piano** | The original additive Torment piano: glassy, bell-like stretched partials on detuned string pairs. *Break* = out-of-tune keys, missing overtones, rattle, dead keys |
 | **Demented Pipe Organ** | Additive pipe ranks (16' to mixtures and reeds). *Stops* = soft flute → full organ; *Dement* = ranks out of tune with each other, tremulant, wind-starved wobble, sagging pitch, a ciphering wrong pipe |
 | **Heartbeat** | Lub-dub heartbeat while a key is held. *Rate* in BPM; *Panic* speeds it up over time, makes it irregular and pounding |
 | **Rusty Chains** | Link-on-link impacts in little cascades through three banks of metal resonators, plus rusty grinding and creaks. *Rattle* = slow clinks → frantic shaking; *Rust* = duller links + more grinding |
@@ -33,15 +33,15 @@ Requirements: CMake 3.22+, Git, and a C++17 compiler (Xcode on macOS, Visual Stu
 
 ```bash
 cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release --target DREAD_VST3 DREAD_Standalone   # add DREAD_AU on macOS
+cmake --build build --config Release --target Torment_VST3 Torment_Standalone   # add Torment_AU on macOS
 ```
-The output goes to `build/DREAD_artefacts/Release/`. Copy `DREAD.vst3` to:
-- macOS: `~/Library/Audio/Plug-Ins/VST3/` (and `DREAD.component` to `~/Library/Audio/Plug-Ins/Components/`)
+The output goes to `build/Torment_artefacts/Release/`. Copy `Torment.vst3` to:
+- macOS: `~/Library/Audio/Plug-Ins/VST3/` (and `Torment.component` to `~/Library/Audio/Plug-Ins/Components/`)
 - Windows: `C:\Program Files\Common Files\VST3\`
 
 **No compiler?** Push this folder to a GitHub repo. The included workflow (`.github/workflows/build.yml`) builds the macOS and Windows plugins and attaches them as downloadable artifacts on the Actions tab.
 
-On macOS, unsigned builds may need: `xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/DREAD.vst3`
+On macOS, unsigned builds may need: `xattr -dr com.apple.quarantine ~/Library/Audio/Plug-Ins/VST3/Torment.vst3`
 
 ## Offline DSP test
-`Source/DreadEngine.h` doesn't depend on JUCE. Run `cmake --build build --target dread_render && ./build/dread_render demo.wav` to render a 20-second demo.
+`Source/DreadEngine.h` doesn't depend on JUCE. Run `cmake --build build --target torment_render && ./build/torment_render demo.wav` to render a 20-second demo.

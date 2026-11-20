@@ -97,7 +97,7 @@ const std::vector<Preset>& presets()
 } // namespace
 
 //==============================================================================
-APVTS::ParameterLayout DreadProcessor::createLayout()
+APVTS::ParameterLayout TormentProcessor::createLayout()
 {
     using namespace juce;
     std::vector<std::unique_ptr<RangedAudioParameter>> ps;
@@ -201,28 +201,28 @@ APVTS::ParameterLayout DreadProcessor::createLayout()
 }
 
 //==============================================================================
-DreadProcessor::DreadProcessor()
+TormentProcessor::TormentProcessor()
     : AudioProcessor (BusesProperties().withOutput ("Output", juce::AudioChannelSet::stereo(), true)),
-      apvts (*this, nullptr, "DREAD", createLayout())
+      apvts (*this, nullptr, "TORMENT", createLayout())
 {
     for (int i = 0; i < 16; ++i) gatePtrs[(size_t) i] = apvts.getRawParameterValue ("gate" + juce::String (i));
     refreshUserPresets();
     setCurrentProgram (0);   // new instances open on "Init (Clean)": one plain sound, every effect off
 }
 
-bool DreadProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
+bool TormentProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
 {
     const auto& out = layouts.getMainOutputChannelSet();
     return out == juce::AudioChannelSet::stereo() || out == juce::AudioChannelSet::mono();
 }
 
-void DreadProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
+void TormentProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
     engine.prepare (sampleRate, samplesPerBlock);
     keyboardState.reset();
 }
 
-void DreadProcessor::pullParams()
+void TormentProcessor::pullParams()
 {
     auto& p = engine.params;
     p.droneLevel = get ("droneLevel"); p.droneDetune = get ("droneDetune"); p.droneFold = get ("droneFold"); p.droneSub = get ("droneSub");
@@ -250,7 +250,7 @@ void DreadProcessor::pullParams()
     p.outputDb = get ("outputDb");
 }
 
-void DreadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
+void TormentProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     juce::ScopedNoDenormals noDenormals;
     pullParams();
@@ -302,18 +302,18 @@ void DreadProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiB
 //==============================================================================
 //==============================================================================
 // Programs = factory presets followed by the user's saved presets.
-int DreadProcessor::getNumFactoryPresets() const { return (int) presets().size(); }
+int TormentProcessor::getNumFactoryPresets() const { return (int) presets().size(); }
 
 // Same location scheme as Possessed:
-//   macOS:   ~/Library/Application Support/Castle Danger/DREAD/Presets
-//   Windows: %APPDATA%\Castle Danger\DREAD\Presets
-juce::File DreadProcessor::getUserPresetFolder()
+//   macOS:   ~/Library/Application Support/Castle Danger/Torment/Presets
+//   Windows: %APPDATA%\Castle Danger\Torment\Presets
+juce::File TormentProcessor::getUserPresetFolder()
 {
     auto base = juce::File::getSpecialLocation (juce::File::userApplicationDataDirectory); // ~/Library on macOS, %APPDATA% on Windows
    #if JUCE_MAC
     base = base.getChildFile ("Application Support");
    #endif
-    return base.getChildFile ("Castle Danger").getChildFile ("DREAD").getChildFile ("Presets");
+    return base.getChildFile ("Castle Danger").getChildFile ("Torment").getChildFile ("Presets");
 }
 
 // v1.5.0 saved presets in Documents/Castle Danger Music Company/DREAD/Presets.
@@ -334,12 +334,12 @@ static void migrateOldPresetFolder (const juce::File& newFolder)
             dir.deleteFile();
 }
 
-juce::File DreadProcessor::fileForPreset (const juce::String& name) const
+juce::File TormentProcessor::fileForPreset (const juce::String& name) const
 {
     return getUserPresetFolder().getChildFile (juce::File::createLegalFileName (name.trim()) + ".dreadpreset");
 }
 
-void DreadProcessor::refreshUserPresets()
+void TormentProcessor::refreshUserPresets()
 {
     migrateOldPresetFolder (getUserPresetFolder());
     juce::StringArray names;
@@ -350,17 +350,17 @@ void DreadProcessor::refreshUserPresets()
     userPresets = names;
 }
 
-juce::StringArray DreadProcessor::getUserPresetNames() const { const juce::ScopedLock sl (presetLock); return userPresets; }
+juce::StringArray TormentProcessor::getUserPresetNames() const { const juce::ScopedLock sl (presetLock); return userPresets; }
 
-bool DreadProcessor::userPresetExists (const juce::String& name) const { return fileForPreset (name).existsAsFile(); }
+bool TormentProcessor::userPresetExists (const juce::String& name) const { return fileForPreset (name).existsAsFile(); }
 
-int DreadProcessor::getNumPrograms()
+int TormentProcessor::getNumPrograms()
 {
     const juce::ScopedLock sl (presetLock);
     return getNumFactoryPresets() + userPresets.size();
 }
 
-const juce::String DreadProcessor::getProgramName (int index)
+const juce::String TormentProcessor::getProgramName (int index)
 {
     const int f = getNumFactoryPresets();
     if (juce::isPositiveAndBelow (index, f)) return presets()[(size_t) index].name;
@@ -368,7 +368,7 @@ const juce::String DreadProcessor::getProgramName (int index)
     return userPresets[index - f];
 }
 
-void DreadProcessor::setCurrentProgram (int index)
+void TormentProcessor::setCurrentProgram (int index)
 {
     if (! juce::isPositiveAndBelow (index, getNumPrograms())) return;
     const int f = getNumFactoryPresets();
@@ -401,7 +401,7 @@ void DreadProcessor::setCurrentProgram (int index)
         }
 }
 
-bool DreadProcessor::saveUserPreset (const juce::String& rawName)
+bool TormentProcessor::saveUserPreset (const juce::String& rawName)
 {
     const auto name = rawName.trim();
     if (name.isEmpty()) return false;
@@ -417,7 +417,7 @@ bool DreadProcessor::saveUserPreset (const juce::String& rawName)
     return true;
 }
 
-bool DreadProcessor::deleteUserPreset (int index)
+bool TormentProcessor::deleteUserPreset (int index)
 {
     if (! isUserPreset (index)) return false;
     const bool ok = fileForPreset (getProgramName (index)).deleteFile();
@@ -427,13 +427,13 @@ bool DreadProcessor::deleteUserPreset (int index)
     return ok;
 }
 
-void DreadProcessor::selectProgramByName (const juce::String& name)
+void TormentProcessor::selectProgramByName (const juce::String& name)
 {
     for (int i = getNumPrograms(); --i >= 0;)
         if (getProgramName (i) == name) { currentProgram = i; return; }
 }
 
-void DreadProcessor::getStateInformation (juce::MemoryBlock& destData)
+void TormentProcessor::getStateInformation (juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
     state.setProperty ("program", currentProgram, nullptr);
@@ -441,7 +441,7 @@ void DreadProcessor::getStateInformation (juce::MemoryBlock& destData)
     if (auto xml = state.createXml()) copyXmlToBinary (*xml, destData);
 }
 
-void DreadProcessor::setStateInformation (const void* data, int sizeInBytes)
+void TormentProcessor::setStateInformation (const void* data, int sizeInBytes)
 {
     if (auto xml = getXmlFromBinary (data, sizeInBytes))
         if (xml->hasTagName (apvts.state.getType()))
@@ -454,7 +454,7 @@ void DreadProcessor::setStateInformation (const void* data, int sizeInBytes)
         }
 }
 
-juce::String DreadProcessor::raiseHell()
+juce::String TormentProcessor::raiseHell()
 {
     const auto roll = dread::rollHell ((uint32_t) juce::Random::getSystemRandom().nextInt(), lastHellCharacter);
     lastHellCharacter = roll.primary;
@@ -468,6 +468,6 @@ juce::String DreadProcessor::raiseHell()
     return roll.character;
 }
 
-juce::AudioProcessorEditor* DreadProcessor::createEditor() { return new DreadEditor (*this); }
+juce::AudioProcessorEditor* TormentProcessor::createEditor() { return new TormentEditor (*this); }
 
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return new DreadProcessor(); }
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return new TormentProcessor(); }

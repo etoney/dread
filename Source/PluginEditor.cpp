@@ -164,7 +164,7 @@ static void drawCastleCrest (juce::Graphics& g, juce::Rectangle<float> r)
 }
 
 
-// DREAD's emblem: three bloody claw marks gouged into a riveted iron medallion.
+// TORMENT's emblem: three bloody claw marks gouged into a riveted iron medallion.
 static void drawDreadEmblem (juce::Graphics& g, juce::Rectangle<float> r)
 {
     const auto c = r.getCentre();
@@ -390,7 +390,7 @@ void DreadLookAndFeel::drawComboBox (juce::Graphics& g, int width, int height, b
 }
 
 //==============================================================================
-DreadEditor::DreadEditor (DreadProcessor& p)
+TormentEditor::TormentEditor (TormentProcessor& p)
     : AudioProcessorEditor (&p), proc (p),
       keyboard (p.keyboardState, juce::MidiKeyboardComponent::horizontalKeyboard)
 {
@@ -471,10 +471,10 @@ DreadEditor::DreadEditor (DreadProcessor& p)
     startTimerHz (20);
 }
 
-DreadEditor::~DreadEditor() { dialog.reset(); setLookAndFeel (nullptr); }
+TormentEditor::~TormentEditor() { dialog.reset(); setLookAndFeel (nullptr); }
 
 //==============================================================================
-void DreadEditor::rebuildPresetMenu()
+void TormentEditor::rebuildPresetMenu()
 {
     presetBox.clear (juce::dontSendNotification);
     const int f = proc.getNumFactoryPresets();
@@ -494,7 +494,7 @@ void DreadEditor::rebuildPresetMenu()
     presetBox.setSelectedId (lastPresetId, juce::dontSendNotification);
 }
 
-void DreadEditor::presetMenuChanged()
+void TormentEditor::presetMenuChanged()
 {
     const int id = presetBox.getSelectedId();
     if (id <= 0) return;
@@ -503,7 +503,7 @@ void DreadEditor::presetMenuChanged()
         presetBox.setSelectedId (lastPresetId, juce::dontSendNotification);   // keep showing the real preset
         if (id == kShowFolderId)
         {
-            auto folder = DreadProcessor::getUserPresetFolder();
+            auto folder = TormentProcessor::getUserPresetFolder();
             folder.createDirectory();
             folder.startAsProcess();
         }
@@ -525,14 +525,14 @@ void DreadEditor::presetMenuChanged()
     presetBox.setItemEnabled (kDeleteId, proc.isUserPreset (id - 1));
 }
 
-void DreadEditor::closeDialog()
+void TormentEditor::closeDialog()
 {
     // defer deletion: we're usually inside the dialog's own button callback
-    juce::Component::SafePointer<DreadEditor> safe (this);
+    juce::Component::SafePointer<TormentEditor> safe (this);
     juce::MessageManager::callAsync ([safe] { if (safe != nullptr) safe->dialog.reset(); });
 }
 
-void DreadEditor::showSaveDialog()
+void TormentEditor::showSaveDialog()
 {
     if (dialog != nullptr) return;
     const auto cur = proc.getProgramName (proc.getCurrentProgram());
@@ -544,7 +544,7 @@ void DreadEditor::showSaveDialog()
     dialog->addButton ("CANCEL", 0, juce::KeyPress (juce::KeyPress::escapeKey));
     addAndMakeVisible (*dialog);
     dialog->setCentrePosition (getLocalBounds().getCentre());
-    juce::Component::SafePointer<DreadEditor> safe (this);
+    juce::Component::SafePointer<TormentEditor> safe (this);
     dialog->enterModalState (true, juce::ModalCallbackFunction::create ([safe] (int result)
     {
         if (safe == nullptr || safe->dialog == nullptr) return;
@@ -556,7 +556,7 @@ void DreadEditor::showSaveDialog()
         {
             if (safe == nullptr) return;
             if (! safe->proc.saveUserPreset (name))
-                safe->showConfirm ("SAVE FAILED", "Couldn't write the preset file to:\n" + DreadProcessor::getUserPresetFolder().getFullPathName(), "OK", {});
+                safe->showConfirm ("SAVE FAILED", "Couldn't write the preset file to:\n" + TormentProcessor::getUserPresetFolder().getFullPathName(), "OK", {});
             safe->rebuildPresetMenu();
         };
         if (safe->proc.userPresetExists (name))
@@ -568,7 +568,7 @@ void DreadEditor::showSaveDialog()
     if (auto* te = dialog->getTextEditor ("name")) { te->grabKeyboardFocus(); te->selectAll(); }
 }
 
-void DreadEditor::showConfirm (const juce::String& title, const juce::String& message, const juce::String& okText, std::function<void()> onOk)
+void TormentEditor::showConfirm (const juce::String& title, const juce::String& message, const juce::String& okText, std::function<void()> onOk)
 {
     if (dialog != nullptr) return;
     dialog = std::make_unique<juce::AlertWindow> (title, message, juce::MessageBoxIconType::NoIcon, this);
@@ -577,7 +577,7 @@ void DreadEditor::showConfirm (const juce::String& title, const juce::String& me
     if (onOk) dialog->addButton ("CANCEL", 0, juce::KeyPress (juce::KeyPress::escapeKey));
     addAndMakeVisible (*dialog);
     dialog->setCentrePosition (getLocalBounds().getCentre());
-    juce::Component::SafePointer<DreadEditor> safe (this);
+    juce::Component::SafePointer<TormentEditor> safe (this);
     dialog->enterModalState (true, juce::ModalCallbackFunction::create ([safe, onOk] (int result)
     {
         if (safe == nullptr) return;
@@ -586,7 +586,7 @@ void DreadEditor::showConfirm (const juce::String& title, const juce::String& me
     }), false);
 }
 
-DreadEditor::Knob* DreadEditor::makeKnob (const juce::String& id, const juce::String& text, bool big)
+TormentEditor::Knob* TormentEditor::makeKnob (const juce::String& id, const juce::String& text, bool big)
 {
     auto k = std::make_unique<Knob>();
     k->big = big;
@@ -605,7 +605,7 @@ DreadEditor::Knob* DreadEditor::makeKnob (const juce::String& id, const juce::St
     return knobs.back().get();
 }
 
-void DreadEditor::layoutSection (Section& s, juce::Rectangle<int> area)
+void TormentEditor::layoutSection (Section& s, juce::Rectangle<int> area)
 {
     s.bounds = area;
     auto inner = area.reduced (10).withTrimmedTop (18);
@@ -619,9 +619,9 @@ void DreadEditor::layoutSection (Section& s, juce::Rectangle<int> area)
     }
 }
 
-void DreadEditor::resized()
+void TormentEditor::resized()
 {
-    // header, laid out like Chop Shop / Dominatrix: [emblem + title] [Castle Danger plate] [preset block]
+    // header, laid out like Cutthroat / Dominatrix: [emblem + title] [Castle Danger plate] [preset block]
     const int W = getWidth();
     emblemArea = { 18, 12, 86, 86 };
     logoArea   = { 116, 10, 330, 66 };
@@ -721,7 +721,7 @@ void DreadEditor::resized()
 
 //==============================================================================
 // Bakes the whole rusty backdrop (iron, rust, drips, riveted plates, stencils, badge) into one image.
-void DreadEditor::buildBackdrop()
+void TormentEditor::buildBackdrop()
 {
     const float scale = 2.0f;
     const int W = getWidth(), H = getHeight();
@@ -854,10 +854,10 @@ void DreadEditor::buildBackdrop()
         for (float x = 14.0f; x < (float) W - 8.0f; x += 30.0f) rivet (x, st.getCentreY(), 3.0f);
     }
 
-    // emblem: DREAD's claw-marked medallion
+    // emblem: TORMENT's claw-marked medallion
     drawDreadEmblem (g, emblemArea.toFloat());
 
-    // CASTLE DANGER MUSIC COMPANY plate with the castle crest (same as Chop Shop / Dominatrix)
+    // CASTLE DANGER MUSIC COMPANY plate with the castle crest (same as Cutthroat / Dominatrix)
     plateFrame (badge, false);
     g.setColour (pal::paint.withAlpha (0.22f)); g.drawRect (badge.reduced (5.0f), 1.0f);
     drawCastleCrest (g, crestArea.toFloat());
@@ -883,20 +883,26 @@ void DreadEditor::buildBackdrop()
     auto pl = tex::distressedText ("PRESET", 120, 16, tex::stencil (14.0f), pal::paint, juce::Justification::centredLeft, scale, 0.2f, 7, 0.15f);
     g.drawImage (pl, juce::Rectangle<float> ((float) presetArea.getX() + 2, (float) presetArea.getY() + 2, 120.0f, 16.0f));
 
-    // title: big distressed DREAD in blood red (drawn live so it can flicker)
+    // title: big distressed TORMENT in blood red (drawn live so it can flicker)
     {
         const int lw = logoArea.getWidth(), lh = logoArea.getHeight();
         logoImage = juce::Image (juce::Image::ARGB, (int) ((float) lw * scale), (int) ((float) lh * scale), true);
         juce::Graphics lg (logoImage);
         lg.addTransform (juce::AffineTransform::scale (scale));
-        lg.setFont (tex::stencil (66.0f).withExtraKerningFactor (0.08f));
+        auto f = tex::stencil (66.0f).withExtraKerningFactor (0.08f);
+        {
+            juce::GlyphArrangement all; all.addLineOfText (f, "TORMENT", 0, 0);
+            const float wAll = all.getBoundingBox (0, -1, true).getWidth();
+            if (wAll > (float) lw - 4.0f) f = f.withHeight (66.0f * ((float) lw - 4.0f) / wAll);
+        }
+        lg.setFont (f);
         lg.setColour (pal::signal);
-        lg.drawText ("DREAD", 0, 0, lw, lh, juce::Justification::centredLeft, false);
+        lg.drawText ("TORMENT", 0, 0, lw, lh, juce::Justification::centredLeft, false);
         tex::distress (logoImage, scale, 0.3f, 666);
     }
 }
 
-void DreadEditor::paint (juce::Graphics& g)
+void TormentEditor::paint (juce::Graphics& g)
 {
     if (backdrop.isValid()) g.drawImage (backdrop, getLocalBounds().toFloat());
     else g.fillAll (pal::ironDark);
@@ -925,7 +931,7 @@ void DreadEditor::paint (juce::Graphics& g)
     }
 }
 
-void DreadEditor::timerCallback()
+void TormentEditor::timerCallback()
 {
     if (hellFade > 0.0f)
     {

@@ -19,7 +19,7 @@ int main (int argc, char** argv)
     int failures = 0;
     auto check = [&] (bool ok, const char* what) { std::printf ("[%s] %s\n", ok ? "PASS" : "FAIL", what); if (! ok) ++failures; };
     {
-        DreadProcessor proc;
+        TormentProcessor proc;
         proc.setPlayConfigDetails (0, 2, 48000.0, 512);
         proc.prepareToPlay (48000.0, 512);
         std::unique_ptr<juce::AudioProcessorEditor> ed (proc.createEditor());
@@ -82,10 +82,10 @@ int main (int argc, char** argv)
         }
 
         // ---- preset folder location (matches Possessed)
-        const auto folder = DreadProcessor::getUserPresetFolder().getFullPathName();
+        const auto folder = TormentProcessor::getUserPresetFolder().getFullPathName();
         std::printf ("preset folder: %s\n", folder.toRawUTF8());
        #if JUCE_MAC
-        check (folder.contains ("Library/Application Support/Castle Danger/DREAD/Presets"), "preset folder is in Application Support");
+        check (folder.contains ("Library/Application Support/Castle Danger/Torment/Presets"), "preset folder is in Application Support");
        #endif
         // ---- preset round trip
         const juce::String name = "CI Test Preset";

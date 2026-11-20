@@ -1,5 +1,5 @@
 ===============================================================================
-  DREAD  //  CONTROLS QUICK REFERENCE
+  TORMENT  //  CONTROLS QUICK REFERENCE
   Castle Danger Music Company
 ===============================================================================
 
@@ -28,9 +28,9 @@ HEADER
 
       "Init (Clean)" is the blank starting point: one plain drone and every
       effect turned off (no DREAD, Torment, ring mod, distortion, gate,
-      wobble, delay or reverb). DREAD opens on it, just like Possessed.
+      wobble, delay or reverb). Torment opens on it, just like Possessed.
 
-      Same key = same sound: anything "random" in DREAD (chain rattles,
+      Same key = same sound: anything "random" in Torment (chain rattles,
       whisper syllables, scream cracks, jumpscare hits, piano tuning, etc.)
       is fixed per key, so a track plays back the same way every time.
 
@@ -76,8 +76,8 @@ HEADER
       Refresh preset list .......... picks up preset files you've added or
                                      removed by hand.
       Show presets folder .......... opens the folder where presets live:
-          Mac:     ~/Library/Application Support/Castle Danger/DREAD/Presets
-          Windows: %APPDATA%\Castle Danger\DREAD\Presets
+          Mac:     ~/Library/Application Support/Castle Danger/Torment/Presets
+          Windows: %APPDATA%\Castle Danger\Torment\Presets
       (Same place Possessed keeps its presets. The Mac Library folder is
       hidden: use "Show presets folder" or Finder > Go > Go to Folder.)
       Each preset is one ".dreadpreset" file. Copy them to back up your
@@ -105,7 +105,7 @@ BROKEN PIANO: a modelled acoustic piano (felt hammers, 2-3 strings per key,
   TIP: Use a short ATTACK (under 10 ms) so it sounds struck. A long attack
        turns it into a creepy reversed-piano swell.
 
-GHOST PIANO: the original DREAD piano, a glassy, bell-like haunted piano
+GHOST PIANO: the original Torment piano, a glassy, bell-like haunted piano
   LEVEL ....... Volume of the ghost piano.
   BREAK ....... Pulls keys out of tune (fixed per key), spreads the paired
                 strings apart, drops overtones, adds string rattle and

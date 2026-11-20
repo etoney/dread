@@ -21,11 +21,11 @@ private:
     juce::Image rustDisc;
 };
 
-class DreadEditor : public juce::AudioProcessorEditor, private juce::Timer
+class TormentEditor : public juce::AudioProcessorEditor, private juce::Timer
 {
 public:
-    explicit DreadEditor (DreadProcessor&);
-    ~DreadEditor() override;
+    explicit TormentEditor (TormentProcessor&);
+    ~TormentEditor() override;
     void paint (juce::Graphics&) override;
     void resized() override;
 
@@ -49,7 +49,7 @@ private:
     void closeDialog();
     void timerCallback() override;
 
-    DreadProcessor& proc;
+    TormentProcessor& proc;
     DreadLookAndFeel lnf;
     std::vector<std::unique_ptr<Knob>> knobs;
     std::vector<Section> sections;
@@ -72,5 +72,5 @@ private:
     juce::Image backdrop, logoImage;
     float flicker = 0.0f;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DreadEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TormentEditor)
 };

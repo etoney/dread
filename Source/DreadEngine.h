@@ -1,4 +1,4 @@
-// DreadEngine.h — framework-free DSP core for the DREAD horror sound-design synth.
+// DreadEngine.h — framework-free DSP core for the Torment horror sound-design synth.
 // No JUCE dependency, so it can be unit-tested / rendered offline.
 #pragma once
 #include <algorithm>
@@ -362,7 +362,7 @@ private:
 };
 
 //==============================================================================
-// GHOST PIANO (the original DREAD piano) — additive/modal piano: stretched (inharmonic) partials on detuned string pairs,
+// GHOST PIANO (the original Torment piano) — additive/modal piano: stretched (inharmonic) partials on detuned string pairs,
 // hammer thump, per-key fixed detune (same key is always wrong the same way), dead keys, string rattle.
 class GhostPianoLayer
 {

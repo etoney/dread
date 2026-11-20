@@ -3,11 +3,11 @@
 #include "DreadEngine.h"
 #include "RaiseHell.h"
 
-class DreadProcessor : public juce::AudioProcessor
+class TormentProcessor : public juce::AudioProcessor
 {
 public:
-    DreadProcessor();
-    ~DreadProcessor() override = default;
+    TormentProcessor();
+    ~TormentProcessor() override = default;
 
     void prepareToPlay (double sampleRate, int samplesPerBlock) override;
     void releaseResources() override {}
@@ -17,7 +17,7 @@ public:
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
 
-    const juce::String getName() const override { return "DREAD"; }
+    const juce::String getName() const override { return "Torment"; }
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return false; }
     bool isMidiEffect() const override { return false; }
@@ -34,7 +34,7 @@ public:
 
     static juce::AudioProcessorValueTreeState::ParameterLayout createLayout();
 
-    // ---- user presets (saved as files in Documents/Castle Danger Music Company/DREAD/Presets)
+    // ---- user presets (saved as files in Documents/Castle Danger Music Company/Torment/Presets)
     static juce::File getUserPresetFolder();
     int getNumFactoryPresets() const;
     juce::StringArray getUserPresetNames() const;
@@ -65,5 +65,5 @@ private:
     juce::File fileForPreset (const juce::String& name) const;
     void selectProgramByName (const juce::String& name);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DreadProcessor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TormentProcessor)
 };
